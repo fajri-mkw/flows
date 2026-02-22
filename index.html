@@ -48,13 +48,27 @@
       FileSpreadsheet, Activity, Settings, Edit, ArrowLeftRight,
       Clock, ChevronRight, BarChart, Calendar, Share2,
       Archive, Paperclip, AlignLeft, Cloud, Check,
-      Youtube, Instagram, Smartphone, Monitor, Facebook, Twitter
+      Youtube, Instagram, Smartphone, Monitor, Facebook, Twitter,
+      Users, Lock, UserPlus, LogOut, User
     } = LucideIcons;
 
     function App() {
       // ==========================================
       // 1. STATE MANAGEMENT
       // ==========================================
+      // --- AUTH & USER MANAGEMENT STATE ---
+      const [currentUser, setCurrentUser] = useState(null); // null = belum login, tampilkan layar login
+      const [usersDb, setUsersDb] = useState([
+        { id: 1, name: 'Admin Sistem', email: 'admin@pushakin.com', role: 'superadmin', password: 'password123' },
+        { id: 2, name: 'Bapak Manager', email: 'manager@pushakin.com', role: 'manager', password: 'password123' },
+        { id: 3, name: 'Joko Reporter', email: 'reporter@pushakin.com', role: 'reporter', password: 'password123' },
+        { id: 4, name: 'Siti Editor Media', email: 'editor@pushakin.com', role: 'editor_media', password: 'password123' },
+        { id: 5, name: 'Budi Publisher', email: 'publisher@pushakin.com', role: 'publisher', password: 'password123' }
+      ]);
+      const [loginEmail, setLoginEmail] = useState('');
+      const [loginPassword, setLoginPassword] = useState('');
+      const [loginError, setLoginError] = useState('');
+
       const [activeRole, setActiveRole] = useState('all_dashboard');
       const [isSidebarOpen, setIsSidebarOpen] = useState(true);
       const [activeTab, setActiveTab] = useState('form');
@@ -158,6 +172,37 @@
       // ==========================================
       // 3. HANDLERS
       // ==========================================
+      const handleLogin = (e) => {
+        e.preventDefault();
+        // Simulasi Pengecekan Database
+        const user = usersDb.find(u => u.email === loginEmail && u.password === loginPassword);
+        if (user) {
+          setCurrentUser(user);
+          setLoginError('');
+          // Arahkan ke halaman sesuai Role
+          if (user.role === 'superadmin') setActiveRole('user_management');
+          else if (user.role === 'manager') setActiveRole('manager');
+          else setActiveRole(user.role);
+        } else {
+          setLoginError('Email atau password salah!');
+        }
+      };
+
+      const handleLogout = () => {
+        setCurrentUser(null);
+        setLoginEmail('');
+        setLoginPassword('');
+        setActiveRole('all_dashboard');
+      };
+
+      const handleUpdateUserRole = (userId, newRole) => {
+        // Simulasi Update Database (Manual Input oleh Admin)
+        setUsersDb(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+        setToastMessage('Role user berhasil diupdate!');
+        setHasCompletedTask(true);
+        setTimeout(() => setHasCompletedTask(false), 3000);
+      };
+
       const handleRoleChange = (e) => {
         const roleName = e.target.name.replace('role_', '');
         const isChecked = e.target.checked;
@@ -285,6 +330,111 @@
       // ==========================================
       // 5. MAIN COMPONENTS (VIEWS)
       // ==========================================
+      const renderLoginScreen = () => (
+        <div className="flex items-center justify-center h-screen w-full bg-slate-100">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 w-full max-w-md animate-in zoom-in-95 duration-300">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Activity className="text-white" size={32} />
+              </div>
+              <h1 className="text-2xl font-black text-gray-900">Pushakin Flows</h1>
+              <p className="text-sm text-gray-500 mt-1">Silakan masuk ke akun Anda</p>
+            </div>
+
+            {loginError && (
+              <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm font-semibold mb-4 border border-rose-200 flex items-center gap-2">
+                <Lock size={16} /> {loginError}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required className="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="email@pushakin.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
+                <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required className="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="••••••••" />
+              </div>
+              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex justify-center items-center gap-2 mt-2">
+                Masuk Sistem
+              </button>
+            </form>
+
+            <div className="mt-8 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
+              <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider text-center">Akun Demo (Testing):</p>
+              <ul className="text-xs text-gray-600 space-y-1">
+                <li><b>SuperAdmin:</b> admin@pushakin.com (Pass: password123)</li>
+                <li><b>Manager:</b> manager@pushakin.com</li>
+                <li><b>Reporter:</b> reporter@pushakin.com</li>
+                <li><b>Editor:</b> editor@pushakin.com</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+
+      const renderUserManagement = () => (
+        <div className="max-w-6xl mx-auto animate-in fade-in duration-300">
+          <div className="mb-6 border-b border-gray-200 pb-4">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <Users className="text-indigo-600" /> Manajemen User & Hak Akses
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">Ini adalah simulasi <b>Manual Input</b>. SuperAdmin mengatur peran setiap akun dari sini.</p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+             <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="font-bold text-gray-700">Daftar Pengguna Sistem</h3>
+                <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors">
+                  <UserPlus size={16} /> Tambah User
+                </button>
+             </div>
+             <div className="overflow-x-auto">
+               <table className="w-full text-sm text-left text-gray-600">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-100 border-b border-gray-200">
+                     <tr>
+                        <th className="px-6 py-4">Nama User</th>
+                        <th className="px-6 py-4">Email / Login</th>
+                        <th className="px-6 py-4">Role Saat Ini</th>
+                        <th className="px-6 py-4 text-center">Ubah Role (Manual Input)</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     {usersDb.map(user => (
+                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                           <td className="px-6 py-4 font-bold text-gray-800 flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">{user.name.charAt(0)}</div>
+                             {user.name}
+                           </td>
+                           <td className="px-6 py-4">{user.email}</td>
+                           <td className="px-6 py-4">
+                              <span className={`px-2.5 py-1 rounded text-xs font-bold border ${user.role === 'superadmin' ? 'bg-purple-100 text-purple-700 border-purple-200' : user.role === 'manager' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                                {user.role === 'superadmin' ? 'Super Admin' : user.role === 'manager' ? 'Manager' : roleConfig[user.role]?.label || user.role}
+                              </span>
+                           </td>
+                           <td className="px-6 py-4">
+                              <select 
+                                value={user.role} 
+                                onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
+                                className="bg-white border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 outline-none cursor-pointer"
+                              >
+                                <option value="superadmin">Super Admin</option>
+                                <option value="manager">Manager</option>
+                                {Object.keys(roleConfig).map(rk => (
+                                  <option key={rk} value={rk}>{roleConfig[rk].label}</option>
+                                ))}
+                              </select>
+                           </td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+             </div>
+          </div>
+        </div>
+      );
+
       const renderPublicDashboard = () => {
         const stages = ['Produksi', 'Editing', 'Review', 'Publikasi'];
 
@@ -958,40 +1108,81 @@
       // ==========================================
       // 6. MAIN RENDER (LAYOUT)
       // ==========================================
+      // Jika belum login, tampilkan layar login (Metode Sign-in)
+      if (!currentUser) {
+         return renderLoginScreen();
+      }
+
+      // Middleware Akses Sidebar: Menentukan menu apa saja yang boleh dilihat user ini
+      const canSeeManager = currentUser.role === 'superadmin' || currentUser.role === 'manager';
+      const canSeeUserMgmt = currentUser.role === 'superadmin';
+
       return (
         <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
           {!isSidebarOpen && <div className="fixed inset-0 bg-gray-900/50 z-20 md:hidden" onClick={() => setIsSidebarOpen(true)} />}
 
           <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 fixed md:relative z-30 w-72 h-full bg-white border-r border-gray-200 flex flex-col`}>
-            <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"><Activity className="text-white" size={20} /></div>
-               <div>
-                 <h1 className="text-xl font-black text-gray-900 leading-none">Pushakin</h1>
-                 <p className="text-[10px] font-bold text-indigo-600 uppercase mt-0.5">Flows Dashboard</p>
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"><Activity className="text-white" size={20} /></div>
+                 <div>
+                   <h1 className="text-xl font-black text-gray-900 leading-none">Pushakin</h1>
+                   <p className="text-[10px] font-bold text-indigo-600 uppercase mt-0.5">Flows Dashboard</p>
+                 </div>
                </div>
+            </div>
+
+            {/* Profil User Login */}
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-bold shrink-0">
+                  <User size={20}/>
+                </div>
+                <div className="truncate">
+                  <p className="text-sm font-bold text-gray-800 truncate">{currentUser.name}</p>
+                  <p className="text-xs text-gray-500 capitalize">{currentUser.role === 'superadmin' ? 'Super Admin' : currentUser.role === 'manager' ? 'Manager' : roleConfig[currentUser.role]?.label}</p>
+                </div>
+              </div>
+              <button onClick={handleLogout} className="text-gray-400 hover:text-rose-600 transition-colors p-2 rounded-lg hover:bg-rose-50" title="Keluar">
+                <LogOut size={18} />
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                <div className="mb-6">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-2">Sistem Sentral</p>
-                  <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors ${activeRole === 'manager' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('manager')}><LayoutDashboard size={18} /> Ruang Manager</button>
-                  <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold mt-1 transition-colors ${activeRole === 'all_dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('all_dashboard')}><BarChart size={18} /> Public Dashboard</button>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-2">Menu Utama</p>
+                  
+                  {canSeeUserMgmt && (
+                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold mb-1 transition-colors ${activeRole === 'user_management' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('user_management')}><Users size={18} /> Manajemen User</button>
+                  )}
+                  
+                  {canSeeManager && (
+                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold mb-1 transition-colors ${activeRole === 'manager' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('manager')}><LayoutDashboard size={18} /> Ruang Manager</button>
+                  )}
+
+                  <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors ${activeRole === 'all_dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('all_dashboard')}><BarChart size={18} /> Public Dashboard</button>
                </div>
 
-               {['Tahap 1: Produksi Lapangan', 'Tahap 2: Editing & Media', 'Tahap 3: Review / QA', 'Tahap 4: Publikasi'].map((groupName) => (
-                 <div key={groupName} className="mb-6">
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-2 ml-2">{groupName}</p>
-                    {sidebarMenus.filter(m => m.group === groupName).map(menu => (
-                       <button 
-                         key={menu.id}
-                         className={`w-full flex justify-between items-center px-3 py-2.5 rounded-xl mb-1 transition-colors ${activeRole === menu.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                         onClick={() => { setActiveRole(menu.id); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-                       >
-                         <div className="flex items-center gap-3 font-semibold text-sm"><menu.icon size={18} /> {menu.label}</div>
-                       </button>
-                    ))}
-                 </div>
-               ))}
+               {/* Menampilkan menu sesuai Role */}
+               {['Tahap 1: Produksi Lapangan', 'Tahap 2: Editing & Media', 'Tahap 3: Review / QA', 'Tahap 4: Publikasi'].map((groupName) => {
+                 const groupMenus = sidebarMenus.filter(m => m.group === groupName && (canSeeManager || currentUser.role === m.id));
+                 if (groupMenus.length === 0) return null; // Sembunyikan grup jika tidak ada akses
+
+                 return (
+                   <div key={groupName} className="mb-6">
+                      <p className="text-xs font-bold text-gray-400 uppercase mb-2 ml-2">{groupName}</p>
+                      {groupMenus.map(menu => (
+                         <button 
+                           key={menu.id}
+                           className={`w-full flex justify-between items-center px-3 py-2.5 rounded-xl mb-1 transition-colors ${activeRole === menu.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                           onClick={() => { setActiveRole(menu.id); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
+                         >
+                           <div className="flex items-center gap-3 font-semibold text-sm"><menu.icon size={18} /> {menu.label}</div>
+                         </button>
+                      ))}
+                   </div>
+                 )
+               })}
             </div>
           </div>
 
@@ -1000,9 +1191,10 @@
                <div className="flex items-center gap-4">
                   <button className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu size={24} /></button>
                   <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
+                     {activeRole === 'user_management' && 'Manajemen User & Sistem (SuperAdmin)'}
                      {activeRole === 'manager' && 'Ruang Kontrol Manager'}
                      {activeRole === 'all_dashboard' && 'Dashboard Monitoring Publik'}
-                     {activeRole !== 'manager' && activeRole !== 'all_dashboard' && `Akses Login: ${roleConfig[activeRole]?.label}`}
+                     {activeRole !== 'manager' && activeRole !== 'all_dashboard' && activeRole !== 'user_management' && `Area Kerja: ${roleConfig[activeRole]?.label}`}
                   </h2>
                </div>
             </header>
@@ -1017,9 +1209,10 @@
             )}
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative bg-slate-50">
+               {activeRole === 'user_management' && renderUserManagement()}
                {activeRole === 'manager' && renderManagerDashboard()}
                {activeRole === 'all_dashboard' && renderPublicDashboard()}
-               {activeRole !== 'manager' && activeRole !== 'all_dashboard' && renderRoleDashboard()}
+               {activeRole !== 'manager' && activeRole !== 'all_dashboard' && activeRole !== 'user_management' && renderRoleDashboard()}
             </div>
           </div>
         </div>
