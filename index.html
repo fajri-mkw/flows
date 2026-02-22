@@ -1,1227 +1,501 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pushakin Flows Dashboard</title>
-  
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Babel Standalone untuk kompilasi JSX di Browser -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <style>
-    /* Custom Scrollbar CSS */
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pushakin - Sistem Manajemen Alur Kerja</title>
     
-    body { margin: 0; padding: 0; background-color: #f8fafc; }
-    #root { height: 100vh; width: 100vw; }
-  </style>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 </head>
-<body>
-  <!-- Container untuk React -->
-  <div id="root">
-    <div style="display:flex; height:100vh; width:100vw; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
-        <div style="width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <p style="font-family: sans-serif; color: #64748b; font-weight: 600;">Memuat Dashboard Pushakin...</p>
-        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-    </div>
-  </div>
+<body class="bg-slate-50 text-slate-800 antialiased overflow-hidden">
+    <div id="root"></div>
 
-  <!-- Script React (JSX) -->
-  <script type="text/babel" data-type="module">
-    // Mengambil library React dan Icon dari CDN (esm.sh)
-    import React, { useState } from 'https://esm.sh/react@18.2.0';
-    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-    import * as LucideIcons from 'https://esm.sh/lucide-react@0.330.0';
-
-    // Ekstrak ikon yang dibutuhkan
-    const {
-      Folder, Link: LinkIcon, UploadCloud, DownloadCloud, 
-      LayoutDashboard, Camera, PenTool, CheckCircle, Send, Menu,
-      Video, Palette, Scissors, Globe, Radio, Mic, FileText, 
-      FileSpreadsheet, Activity, Settings, Edit, ArrowLeftRight,
-      Clock, ChevronRight, BarChart, Calendar, Share2,
-      Archive, Paperclip, AlignLeft, Cloud, Check,
-      Youtube, Instagram, Smartphone, Monitor, Facebook, Twitter,
-      Users, Lock, UserPlus, LogOut, User
-    } = LucideIcons;
-
-    function App() {
-      // ==========================================
-      // 1. STATE MANAGEMENT
-      // ==========================================
-      // --- AUTH & USER MANAGEMENT STATE ---
-      const [currentUser, setCurrentUser] = useState(null); // null = belum login, tampilkan layar login
-      const [usersDb, setUsersDb] = useState([
-        { id: 1, name: 'Admin Sistem', email: 'admin@pushakin.com', role: 'superadmin', password: 'password123' },
-        { id: 2, name: 'Bapak Manager', email: 'manager@pushakin.com', role: 'manager', password: 'password123' },
-        { id: 3, name: 'Joko Reporter', email: 'reporter@pushakin.com', role: 'reporter', password: 'password123' },
-        { id: 4, name: 'Siti Editor Media', email: 'editor@pushakin.com', role: 'editor_media', password: 'password123' },
-        { id: 5, name: 'Budi Publisher', email: 'publisher@pushakin.com', role: 'publisher', password: 'password123' }
-      ]);
-      const [loginEmail, setLoginEmail] = useState('');
-      const [loginPassword, setLoginPassword] = useState('');
-      const [loginError, setLoginError] = useState('');
-
-      const [activeRole, setActiveRole] = useState('all_dashboard');
-      const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-      const [activeTab, setActiveTab] = useState('form');
-
-      const [dateFilter, setDateFilter] = useState('Bulan Ini');
-      const [isCopied, setIsCopied] = useState(false);
-      
-      const [publishLinkValue, setPublishLinkValue] = useState('');
-      const [socialLinks, setSocialLinks] = useState({
-        youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', web: ''
-      });
-      
-      const [operatorLinks, setOperatorLinks] = useState({
-        youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', zoom: ''
-      });
-
-      const [title, setTitle] = useState('');
-      const [unitPemohon, setUnitPemohon] = useState('');
-      const [description, setDescription] = useState('');
-      const [autoCreateDrive, setAutoCreateDrive] = useState(true);
-      const [driveFolders, setDriveFolders] = useState({ 
-        raw: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true },
-        revised: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true },
-        final: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true }
-      });
-      const [tempat, setTempat] = useState('');
-      const [waktu, setWaktu] = useState('');
-      const [namaPIC, setNamaPIC] = useState('');
-      const [waPIC, setWaPIC] = useState('');
-      
-      const [completedProjects, setCompletedProjects] = useState([]);
-      const [isSubmitting, setIsSubmitting] = useState(false);
-      const [hasCompletedTask, setHasCompletedTask] = useState(false);
-      const [toastMessage, setToastMessage] = useState('');
-      
-      const [isUploadConfirmed, setIsUploadConfirmed] = useState(false);
-      const [forwardWithoutUpload, setForwardWithoutUpload] = useState(true); 
-      const [reviewerNotes, setReviewerNotes] = useState(''); 
-
-      const [taskTypes, setTaskTypes] = useState({ peliputan: false, pemberitaan: false, liveStreaming: false, podcast: false, desain: false, text: false, lainnya: false });
-      const [needs, setNeeds] = useState({ teks: false, foto: false, video: false, audio: false, streaming: false, desain: false, podcast: false, lainnya: false });
-      
-      const [taskTypeLainnyaValue, setTaskTypeLainnyaValue] = useState('');
-      const [needsLainnyaValue, setNeedsLainnyaValue] = useState('');
-
-      const [roles, setRoles] = useState({ reporter: false, photo: false, video: false, designer: false, editor_media: false, editor_web: false, streaming: false, podcast: false, reviewer: false, publisher: false, publisher_web: false });
-
-      // ==========================================
-      // 2. CONFIGURATION & MOCK DATA
-      // ==========================================
-      const roleConfig = {
-        reporter: { label: 'Reporter', type: 'upload' },
-        photo: { label: 'Photographer & Audio', type: 'upload' },
-        video: { label: 'Videographer & Audio', type: 'upload' },
-        designer: { label: 'Graphic Designer', type: 'upload' },
-        editor_media: { label: 'Editor (Media)', type: 'download_upload' },
-        editor_web: { label: 'Editor (Web & Socmed)', type: 'download_upload' },
-        streaming: { label: 'Streaming Operator', type: 'link', placeholder: 'Link Streaming' },
-        podcast: { label: 'Podcast Operator', type: 'link', placeholder: 'Link Youtube' },
-        reviewer: { label: 'Reviewer', type: 'download_review' }, 
-        publisher: { label: 'Publisher Social Media', type: 'download_link', placeholder: 'Link Hasil Publish' }, 
-        publisher_web: { label: 'Publisher Web', type: 'download_link', placeholder: 'Link Hasil Publish Web' }, 
-      };
-
-      const sidebarMenus = [
-        { id: 'reporter', label: 'Reporter', icon: FileText, group: 'Tahap 1: Produksi Lapangan' },
-        { id: 'photo', label: 'Photographer & Audio', icon: Camera, group: 'Tahap 1: Produksi Lapangan' },
-        { id: 'video', label: 'Videographer & Audio', icon: Video, group: 'Tahap 1: Produksi Lapangan' },
-        { id: 'designer', label: 'Graphic Designer', icon: Palette, group: 'Tahap 1: Produksi Lapangan' },
-        { id: 'editor_media', label: 'Editor (Media)', icon: Scissors, group: 'Tahap 2: Editing & Media' },
-        { id: 'editor_web', label: 'Editor (Web & Socmed)', icon: Globe, group: 'Tahap 2: Editing & Media' },
-        { id: 'streaming', label: 'Streaming Operator', icon: Radio, group: 'Tahap 2: Editing & Media' },
-        { id: 'podcast', label: 'Podcast Operator', icon: Mic, group: 'Tahap 2: Editing & Media' },
-        { id: 'reviewer', label: 'Reviewer', icon: CheckCircle, group: 'Tahap 3: Review / QA' },
-        { id: 'publisher', label: 'Publisher Social Media', icon: Send, group: 'Tahap 4: Publikasi' }, 
-        { id: 'publisher_web', label: 'Publisher Web', icon: Monitor, group: 'Tahap 4: Publikasi' }, 
-      ];
-
-      const mockTrackingData = [
-        {
-          id: 'PR-2401', date: '21 Feb 2026', title: 'Liputan Rapat Senat Terbuka Universitas', type: 'Peliputan',
-          currentStage: 'Tahap 2: Editing & Media', stageLevel: 2, status: 'Proses Editing',
-          team: ['Reporter', 'Videographer', 'Editor (Media)', 'Reviewer', 'Publisher Social Media'], 
-          logs: [
-            { time: '09:00', msg: 'Tugas dibuat & di-assign oleh Manager' },
-            { time: '13:00', msg: 'File mentah diunggah oleh Videographer' },
-            { time: '14:15', msg: 'Editor Media mulai mengunduh file mentah' }
-          ]
-        },
-        {
-          id: 'PR-2402', date: '22 Feb 2026', title: 'Podcast Bincang Prestasi Mahasiswa', type: 'Podcast',
-          currentStage: 'Tahap 3: Review / QA', stageLevel: 3, status: 'Menunggu Review',
-          team: ['Podcast Operator', 'Reviewer', 'Publisher Web'],
-          logs: [
-            { time: '10:00', msg: 'Tugas dibuat & di-assign oleh Manager' },
-            { time: '15:30', msg: 'Link draft YouTube disubmit oleh Podcast Operator' }
-          ]
-        }
-      ];
-
-      // ==========================================
-      // 3. HANDLERS
-      // ==========================================
-      const handleLogin = (e) => {
-        e.preventDefault();
-        // Simulasi Pengecekan Database
-        const user = usersDb.find(u => u.email === loginEmail && u.password === loginPassword);
-        if (user) {
-          setCurrentUser(user);
-          setLoginError('');
-          // Arahkan ke halaman sesuai Role
-          if (user.role === 'superadmin') setActiveRole('user_management');
-          else if (user.role === 'manager') setActiveRole('manager');
-          else setActiveRole(user.role);
-        } else {
-          setLoginError('Email atau password salah!');
-        }
-      };
-
-      const handleLogout = () => {
-        setCurrentUser(null);
-        setLoginEmail('');
-        setLoginPassword('');
-        setActiveRole('all_dashboard');
-      };
-
-      const handleUpdateUserRole = (userId, newRole) => {
-        // Simulasi Update Database (Manual Input oleh Admin)
-        setUsersDb(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
-        setToastMessage('Role user berhasil diupdate!');
-        setHasCompletedTask(true);
-        setTimeout(() => setHasCompletedTask(false), 3000);
-      };
-
-      const handleRoleChange = (e) => {
-        const roleName = e.target.name.replace('role_', '');
-        const isChecked = e.target.checked;
-        setRoles({ ...roles, [roleName]: isChecked });
-
-        if (isChecked) {
-          setNeeds(prev => {
-             const newNeeds = { ...prev };
-             if (roleName === 'reporter') newNeeds.teks = true;
-             if (roleName === 'photo') { newNeeds.foto = true; newNeeds.audio = true; }
-             if (roleName === 'video') { newNeeds.video = true; newNeeds.audio = true; }
-             if (roleName === 'designer') newNeeds.desain = true;
-             if (roleName === 'streaming') newNeeds.streaming = true;
-             if (roleName === 'podcast') newNeeds.podcast = true;
-             return newNeeds;
-          });
-        }
-      };
-
-      const handleShareDashboard = () => {
-        const shareableLink = "https://pushakin-flows.app/public/board-xyz-123";
-        try {
-          const textArea = document.createElement("textarea");
-          textArea.value = shareableLink;
-          textArea.style.position = "fixed";
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          document.execCommand("copy");
-          textArea.remove();
-          
-          setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2500);
-        } catch (err) {
-          console.error('Failed to copy', err);
-        }
-      };
-
-      const handleTaskSubmit = (actionMsg) => {
-        setIsSubmitting(true);
+    <script type="text/babel">
+        const { useState, useEffect } = React;
         
-        setTimeout(() => {
-          setIsSubmitting(false);
-          setHasCompletedTask(true);
-          
-          if (typeof actionMsg === 'string') {
-             setToastMessage(actionMsg);
-          } else {
-             const config = roleConfig[activeRole];
-             if (config.type.includes('upload')) {
-                setToastMessage('Selesai! File berhasil dikonfirmasi dan diteruskan ke petugas Tahap 2.');
-             } else {
-                setToastMessage('Tugas selesai! File dan laporan diteruskan ke tahap berikutnya.');
-             }
-          }
+        // Ekstrak Ikon dari Lucide
+        const IconFactory = (name, props) => {
+            const iconRef = React.useRef(null);
+            React.useEffect(() => {
+                if (iconRef.current) {
+                    lucide.createIcons({
+                        icons: { [name]: lucide.icons[name] },
+                        nameAttr: 'data-lucide',
+                        attrs: {
+                            class: props.className || '',
+                            width: props.size || 24,
+                            height: props.size || 24,
+                            stroke: props.color || 'currentColor',
+                            'stroke-width': props.strokeWidth || 2,
+                        }
+                    });
+                }
+            }, [name, props]);
+            return <i ref={iconRef} data-lucide={name}></i>;
+        };
 
-          setTimeout(() => {
-             setHasCompletedTask(false);
-             setActiveRole('all_dashboard');
-             setIsUploadConfirmed(false);
-             setPublishLinkValue('');
-             setReviewerNotes(''); 
-             setForwardWithoutUpload(true); 
-             setOperatorLinks({ youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', zoom: '' }); 
-             setSocialLinks({ youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', web: '' }); 
-          }, 3500);
-        }, 1500);
-      };
+        const Icon = ({ name, ...props }) => IconFactory(name, props);
 
-      const handleCompleteProject = () => {
-        setIsSubmitting(true);
-        setTimeout(() => {
-          const newReport = {
-            id: 'PR-2401',
-            title: 'Liputan Rapat Senat Terbuka Universitas',
-            completedAt: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-            tahap1: 'https://drive.google.com/drive/folders/mentah-PR2401',
-            tahap2: 'https://drive.google.com/drive/folders/edit-PR2401',
-            tahap4: { ...socialLinks }
-          };
-          
-          setCompletedProjects(prev => [newReport, ...prev]);
-          setIsSubmitting(false);
-          setToastMessage('Proyek Selesai! Laporan telah masuk ke meja Manager.');
-          setHasCompletedTask(true);
-          
-          setTimeout(() => setHasCompletedTask(false), 4000);
-          
-          setSocialLinks({ youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', web: '' });
-          setPublishLinkValue('');
-          setActiveRole('manager');
-          setActiveTab('reports');
-        }, 1500);
-      };
+        // Konfigurasi Role & Menu
+        const roleConfig = {
+            reporter: { label: 'Reporter / Konten Kreator', icon: 'Camera' },
+            editor_media: { label: 'Editor Media', icon: 'Scissors' },
+            publisher: { label: 'Publisher', icon: 'Send' }
+        };
 
-      // ==========================================
-      // 4. RENDER HELPERS
-      // ==========================================
-      const renderActionPreview = (config) => {
-        switch(config.type) {
-          case 'upload': return <span className="flex w-fit items-center gap-1.5 text-[11px] font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded border border-blue-200 mt-1"><Cloud size={14}/> Folder Drive Upload</span>;
-          case 'download_upload': return (
-              <div className="flex gap-2 mt-1 flex-wrap">
-                <span className="flex items-center gap-1.5 text-[11px] font-medium text-purple-700 bg-purple-100 px-2 py-1 rounded border border-purple-200"><DownloadCloud size={14}/> Folder Download</span>
-                <span className="flex items-center gap-1.5 text-[11px] font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded border border-blue-200"><Cloud size={14}/> Folder Drive Upload</span>
-              </div>
-            );
-          case 'download_review': return (
-              <div className="flex gap-2 mt-1 flex-wrap">
-                <span className="flex items-center gap-1.5 text-[11px] font-medium text-purple-700 bg-purple-100 px-2 py-1 rounded border border-purple-200"><DownloadCloud size={14}/> Folder Download</span>
-                <span className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded border border-amber-200"><CheckCircle size={14}/> Form Review</span>
-              </div>
-            );
-          case 'link': return <span className="flex w-fit items-center gap-1.5 text-[11px] font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded border border-gray-200 mt-1"><LinkIcon size={14}/> Paste {config.placeholder}</span>;
-          case 'download_link': return (
-              <div className="flex gap-2 mt-1 flex-wrap">
-                <span className="flex items-center gap-1.5 text-[11px] font-medium text-purple-700 bg-purple-100 px-2 py-1 rounded border border-purple-200"><DownloadCloud size={14}/> Folder Download</span>
-                <span className="flex items-center gap-1.5 text-[11px] font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded border border-gray-200"><LinkIcon size={14}/> Paste {config.placeholder}</span>
-              </div>
-            );
-          default: return null;
-        }
-      };
-
-      // ==========================================
-      // 5. MAIN COMPONENTS (VIEWS)
-      // ==========================================
-      const renderLoginScreen = () => (
-        <div className="flex items-center justify-center h-screen w-full bg-slate-100">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 w-full max-w-md animate-in zoom-in-95 duration-300">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Activity className="text-white" size={32} />
-              </div>
-              <h1 className="text-2xl font-black text-gray-900">Pushakin Flows</h1>
-              <p className="text-sm text-gray-500 mt-1">Silakan masuk ke akun Anda</p>
-            </div>
-
-            {loginError && (
-              <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm font-semibold mb-4 border border-rose-200 flex items-center gap-2">
-                <Lock size={16} /> {loginError}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
-                <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required className="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="email@pushakin.com" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
-                <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required className="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="••••••••" />
-              </div>
-              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex justify-center items-center gap-2 mt-2">
-                Masuk Sistem
-              </button>
-            </form>
-
-            <div className="mt-8 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
-              <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider text-center">Akun Demo (Testing):</p>
-              <ul className="text-xs text-gray-600 space-y-1">
-                <li><b>SuperAdmin:</b> admin@pushakin.com (Pass: password123)</li>
-                <li><b>Manager:</b> manager@pushakin.com</li>
-                <li><b>Reporter:</b> reporter@pushakin.com</li>
-                <li><b>Editor:</b> editor@pushakin.com</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      );
-
-      const renderUserManagement = () => (
-        <div className="max-w-6xl mx-auto animate-in fade-in duration-300">
-          <div className="mb-6 border-b border-gray-200 pb-4">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <Users className="text-indigo-600" /> Manajemen User & Hak Akses
-            </h2>
-            <p className="text-gray-500 text-sm mt-1">Ini adalah simulasi <b>Manual Input</b>. SuperAdmin mengatur peran setiap akun dari sini.</p>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-             <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="font-bold text-gray-700">Daftar Pengguna Sistem</h3>
-                <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors">
-                  <UserPlus size={16} /> Tambah User
-                </button>
-             </div>
-             <div className="overflow-x-auto">
-               <table className="w-full text-sm text-left text-gray-600">
-                  <thead className="text-xs text-gray-700 uppercase bg-gray-100 border-b border-gray-200">
-                     <tr>
-                        <th className="px-6 py-4">Nama User</th>
-                        <th className="px-6 py-4">Email / Login</th>
-                        <th className="px-6 py-4">Role Saat Ini</th>
-                        <th className="px-6 py-4 text-center">Ubah Role (Manual Input)</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     {usersDb.map(user => (
-                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                           <td className="px-6 py-4 font-bold text-gray-800 flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">{user.name.charAt(0)}</div>
-                             {user.name}
-                           </td>
-                           <td className="px-6 py-4">{user.email}</td>
-                           <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 rounded text-xs font-bold border ${user.role === 'superadmin' ? 'bg-purple-100 text-purple-700 border-purple-200' : user.role === 'manager' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
-                                {user.role === 'superadmin' ? 'Super Admin' : user.role === 'manager' ? 'Manager' : roleConfig[user.role]?.label || user.role}
-                              </span>
-                           </td>
-                           <td className="px-6 py-4">
-                              <select 
-                                value={user.role} 
-                                onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
-                                className="bg-white border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 outline-none cursor-pointer"
-                              >
-                                <option value="superadmin">Super Admin</option>
-                                <option value="manager">Manager</option>
-                                {Object.keys(roleConfig).map(rk => (
-                                  <option key={rk} value={rk}>{roleConfig[rk].label}</option>
-                                ))}
-                              </select>
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-             </div>
-          </div>
-        </div>
-      );
-
-      const renderPublicDashboard = () => {
-        const stages = ['Produksi', 'Editing', 'Review', 'Publikasi'];
-
-        return (
-          <div className="max-w-6xl mx-auto animate-in fade-in duration-300">
-            <div className="mb-6 flex flex-col md:flex-row justify-between md:items-end border-b border-gray-200 pb-4 gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <BarChart className="text-indigo-600" /> Dashboard Progres Proyek
-                </h2>
-                <p className="text-gray-500 text-sm mt-1">Pantau status dan tahapan seluruh penugasan secara real-time.</p>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                 <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm w-full sm:w-auto focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
-                   <Calendar size={16} className="text-gray-500" />
-                   <select 
-                     value={dateFilter}
-                     onChange={(e) => setDateFilter(e.target.value)}
-                     className="bg-transparent text-sm font-medium text-gray-700 outline-none w-full cursor-pointer appearance-none pr-4"
-                   >
-                     <option value="Semua Waktu">Semua Waktu</option>
-                     <option value="Hari Ini">Hari Ini</option>
-                     <option value="Minggu Ini">Minggu Ini</option>
-                     <option value="Bulan Ini">Bulan Ini</option>
-                   </select>
-                 </div>
-
-                 <button 
-                   onClick={handleShareDashboard}
-                   className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all w-full sm:w-auto shadow-sm border ${
-                     isCopied ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
-                   }`}
-                 >
-                   {isCopied ? <CheckCircle size={16} /> : <Share2 size={16} />}
-                   {isCopied ? 'Link Disalin!' : 'Bagikan Link'}
-                 </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {mockTrackingData.map((project, idx) => (
-                <div key={idx} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
-                  
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded text-xs font-bold border border-slate-200 tracking-wide">{project.id}</span>
-                    <span className="flex items-center gap-1 text-xs font-semibold text-gray-500"><Clock size={12} /> {project.date}</span>
-                  </div>
-                  
-                  <h3 className="text-lg font-bold text-gray-800 mb-1 leading-tight">{project.title}</h3>
-                  <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold mb-6 border border-indigo-100">{project.type}</span>
-
-                  <div className="relative mb-6 px-2">
-                    <div className="absolute top-1/2 left-4 right-4 h-1 bg-gray-100 -translate-y-1/2 rounded-full"></div>
-                    <div 
-                      className="absolute top-1/2 left-4 h-1 bg-indigo-500 -translate-y-1/2 rounded-full transition-all duration-700 ease-out"
-                      style={{ width: `calc(${((project.stageLevel - 1) / 3) * 100}% - 16px)` }}
-                    ></div>
-                    
-                    <div className="relative flex justify-between">
-                      {stages.map((stage, i) => {
-                        const stepNum = i + 1;
-                        const isCompleted = stepNum < project.stageLevel;
-                        const isCurrent = stepNum === project.stageLevel;
-                        
-                        return (
-                          <div key={stage} className="flex flex-col items-center gap-1.5 z-10 w-16">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 transition-all duration-300 bg-white ${
-                              isCompleted ? 'bg-indigo-500 border-indigo-500 text-white' : 
-                              isCurrent ? 'border-indigo-500 text-indigo-600 shadow-[0_0_0_4px_rgba(99,102,241,0.15)] scale-110' : 
-                              'border-gray-300 text-gray-400'
-                            }`}>
-                              {isCompleted ? <CheckCircle size={14} /> : stepNum}
-                            </div>
-                            <span className={`text-[10px] font-semibold text-center leading-tight ${isCurrent ? 'text-indigo-700 font-bold' : isCompleted ? 'text-gray-700' : 'text-gray-400'}`}>
-                              {stage}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="bg-amber-50 border border-amber-100 p-3.5 rounded-xl flex items-center justify-between mt-2">
-                    <div>
-                      <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-0.5">Status Tahap {project.stageLevel}</p>
-                      <p className="text-sm font-semibold text-amber-800 flex items-center gap-1.5"><Activity size={14} className="text-amber-600"/> {project.status}</p>
-                    </div>
-                    <button className="bg-white hover:bg-amber-100 text-amber-700 border border-amber-200 px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm">
-                      Cek Task <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      };
-
-      const renderSpreadsheet = () => (
-        <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 w-full overflow-hidden flex flex-col animate-in fade-in duration-300">
-           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-100 pb-4 gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                   <FileSpreadsheet className="text-emerald-600" /> Project Tracking & Log
-                </h2>
-                <p className="text-gray-500 text-sm mt-1">Spreadsheet pemantauan real-time eksklusif untuk Manager & Reviewer.</p>
-              </div>
-           </div>
-           
-           <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
-              <table className="w-full text-sm text-left text-gray-600 min-w-[800px]">
-                 <thead className="text-xs text-gray-700 uppercase bg-gray-100 border-b border-gray-200">
-                    <tr>
-                       <th className="px-4 py-3 border-r border-gray-200 w-24">ID & Tgl</th>
-                       <th className="px-4 py-3 border-r border-gray-200">Judul & Jenis Tugas</th>
-                       <th className="px-4 py-3 border-r border-gray-200">Tahap & Status</th>
-                       <th className="px-4 py-3 border-r border-gray-200 w-64">Log / Catatan Proses</th>
-                       <th className="px-4 py-3 text-center bg-rose-50/50">Aksi Intervensi</th>
-                    </tr>
-                 </thead>
-                 <tbody>
-                    {mockTrackingData.map((data, idx) => (
-                      <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                         <td className="px-4 py-3 border-r border-gray-100 align-top">
-                            <span className="font-bold text-gray-800 block">{data.id}</span>
-                            <span className="text-xs text-gray-500">{data.date}</span>
-                         </td>
-                         <td className="px-4 py-3 border-r border-gray-100 align-top">
-                            <span className="font-semibold text-gray-800 block text-base">{data.title}</span>
-                            <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-bold mt-1 border border-gray-200">{data.type}</span>
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {data.team.map(t => <span key={t} className="text-[9px] bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded">{t}</span>)}
-                            </div>
-                         </td>
-                         <td className="px-4 py-3 border-r border-gray-100 align-top">
-                            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded block w-fit mb-1">{data.currentStage}</span>
-                            <span className="text-xs text-amber-600 font-semibold flex items-center gap-1"><Activity size={12}/> {data.status}</span>
-                         </td>
-                         <td className="px-4 py-3 border-r border-gray-100 align-top">
-                            <ul className="text-[11px] space-y-1.5 relative border-l-2 border-gray-200 pl-3 ml-1">
-                              {data.logs.map((log, i) => (
-                                <li key={i} className="relative">
-                                  <span className="absolute -left-[17px] top-1 w-2 h-2 rounded-full bg-emerald-400 border-2 border-white"></span>
-                                  <b className="text-gray-700">{log.time}:</b> <span className="text-gray-500">{log.msg}</span>
-                                </li>
-                              ))}
-                            </ul>
-                         </td>
-                         <td className="px-4 py-3 align-top bg-rose-50/20">
-                            <div className="flex flex-col gap-2">
-                               <button className="w-full flex justify-center items-center gap-1.5 bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 text-xs font-semibold py-1.5 px-2 rounded-lg transition-colors shadow-sm">
-                                 <Edit size={12}/> Edit Data
-                               </button>
-                               <button className="w-full flex justify-center items-center gap-1.5 bg-white border border-amber-300 text-amber-600 hover:bg-amber-50 text-xs font-semibold py-1.5 px-2 rounded-lg transition-colors shadow-sm">
-                                 <ArrowLeftRight size={12}/> Ubah Status
-                               </button>
-                            </div>
-                         </td>
-                      </tr>
-                    ))}
-                 </tbody>
-              </table>
-           </div>
-        </div>
-      );
-
-      const renderManagerDashboard = () => (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
-          <div className="flex gap-4 mb-6 border-b border-gray-200 pb-2 overflow-x-auto hide-scrollbar">
-             <button className={`whitespace-nowrap font-bold px-4 py-2 rounded-t-lg transition-colors ${activeTab === 'form' ? 'text-indigo-700 border-b-2 border-indigo-700' : 'text-gray-500 hover:text-indigo-500'}`} onClick={() => setActiveTab('form')}>Buat Penugasan Baru</button>
-             <button className={`whitespace-nowrap font-bold px-4 py-2 rounded-t-lg transition-colors ${activeTab === 'tracking' ? 'text-indigo-700 border-b-2 border-indigo-700' : 'text-gray-500 hover:text-indigo-500'}`} onClick={() => setActiveTab('tracking')}>Monitoring Table</button>
-             <button className={`whitespace-nowrap font-bold px-4 py-2 rounded-t-lg transition-colors ${activeTab === 'reports' ? 'text-indigo-700 border-b-2 border-indigo-700' : 'text-gray-500 hover:text-indigo-500'}`} onClick={() => setActiveTab('reports')}>Laporan Akhir (Selesai)</button>
-          </div>
-
-          {activeTab === 'form' && (
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2"><PenTool className="text-indigo-600"/> Form Instruksi Manager</h2>
-              <div className="space-y-6">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div>
-                     <label className="block text-sm font-bold text-gray-700 mb-2">Judul Penugasan</label>
-                     <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: Liputan Rapat Senat Terbuka"/>
-                   </div>
-                   <div>
-                     <label className="block text-sm font-bold text-gray-700 mb-2">Nama / Unit Pemohon</label>
-                     <input type="text" value={unitPemohon} onChange={(e) => setUnitPemohon(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: Fakultas Teknik"/>
-                   </div>
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div>
-                     <label className="block text-sm font-bold text-gray-700 mb-2">Tempat Pelaksanaan</label>
-                     <input type="text" value={tempat} onChange={(e) => setTempat(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Gedung Rektorat Lt. 3" />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-bold text-gray-700 mb-2">Waktu Pelaksanaan</label>
-                     <input type="datetime-local" value={waktu} onChange={(e) => setWaktu(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-gray-700" />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-bold text-gray-700 mb-2">Nama PIC Kegiatan</label>
-                     <input type="text" value={namaPIC} onChange={(e) => setNamaPIC(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Bpk. Budi (Humas)" />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-bold text-gray-700 mb-2">No. WhatsApp PIC</label>
-                     <input type="tel" value={waPIC} onChange={(e) => setWaPIC(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="081234567890" />
-                   </div>
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100 items-start">
-                   <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-3">Jenis Kegiatan</label>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.keys(taskTypes).map(key => (
-                          <label key={key} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer transition-colors text-sm ${taskTypes[key] ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-semibold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                            <input type="checkbox" checked={taskTypes[key]} onChange={(e) => setTaskTypes({...taskTypes, [key]: e.target.checked})} className="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5" />
-                            <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                          </label>
-                        ))}
-                      </div>
-                      {taskTypes.lainnya && (
-                        <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <input 
-                            type="text" 
-                            value={taskTypeLainnyaValue} 
-                            onChange={(e) => setTaskTypeLainnyaValue(e.target.value)} 
-                            placeholder="Sebutkan jenis kegiatan lainnya..." 
-                            className="w-full border border-indigo-200 bg-indigo-50 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                          />
-                        </div>
-                      )}
-                   </div>
-
-                   <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-3">Kebutuhan Output</label>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.keys(needs).map(key => (
-                          <label key={key} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer transition-colors text-sm ${needs[key] ? 'bg-emerald-50 border-emerald-300 text-emerald-700 font-semibold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                            <input type="checkbox" checked={needs[key]} onChange={(e) => setNeeds({...needs, [key]: e.target.checked})} className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5" />
-                            <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                          </label>
-                        ))}
-                      </div>
-                      {needs.lainnya && (
-                        <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <input 
-                            type="text" 
-                            value={needsLainnyaValue} 
-                            onChange={(e) => setNeedsLainnyaValue(e.target.value)} 
-                            placeholder="Sebutkan output lainnya..." 
-                            className="w-full border border-emerald-200 bg-emerald-50 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                          />
-                        </div>
-                      )}
-                   </div>
-                 </div>
-
-                 <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><AlignLeft size={16} /> Detail & Instruksi Permohonan</label>
-                   <textarea rows="4" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Jelaskan secara detail kebutuhan tugas..."/>
-                 </div>
-
-                 <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex flex-col gap-3 transition-all">
-                   <div className="flex items-start gap-3">
-                     <input type="checkbox" id="autoDrive" checked={autoCreateDrive} onChange={(e) => setAutoCreateDrive(e.target.checked)} className="mt-1 text-blue-600 focus:ring-blue-500 w-4 h-4 rounded cursor-pointer border-gray-300" />
-                     <label htmlFor="autoDrive" className="cursor-pointer flex-1">
-                       <span className="block text-sm font-bold text-blue-900 flex items-center gap-2"><Cloud size={16} /> Otomatis Generate Folder Workspace (Google Drive)</span>
-                       <span className="text-xs text-blue-700 mt-1 block">Sistem akan membuat 3 struktur folder utama dan menautkannya ke masing-masing tim.</span>
-                     </label>
-                   </div>
-                   
-                   {autoCreateDrive && (
-                     <div className="ml-7 pt-3 border-t border-blue-200 animate-in fade-in duration-300 space-y-4">
-                       {[
-                         { id: 'raw', label: '1. Raw Folder (Hasil Mentah Lapangan):' },
-                         { id: 'revised', label: '2. Revised Folder (Draft & Editing):' },
-                         { id: 'final', label: '3. Final Product Folder (Siap Publish):' }
-                       ].map(mainFolder => (
-                         <div key={mainFolder.id}>
-                           <p className="text-xs font-bold text-blue-800 mb-2">{mainFolder.label}</p>
-                           <div className="flex flex-wrap gap-2">
-                             {['Foto', 'Video', 'Audio', 'Design', 'Text', 'Lainnya'].map(sub => {
-                                const subKey = sub.toLowerCase();
-                                const isChecked = driveFolders[mainFolder.id][subKey];
-                                return (
-                                  <label key={`${mainFolder.id}-${sub}`} className={`flex items-center gap-1.5 cursor-pointer text-xs font-semibold transition-colors px-2 py-1.5 rounded-lg border shadow-sm ${isChecked ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-800 border-blue-200 hover:bg-blue-100/50'}`}>
-                                    <input 
-                                      type="checkbox" 
-                                      checked={isChecked} 
-                                      onChange={(e) => setDriveFolders(prev => ({
-                                        ...prev, 
-                                        [mainFolder.id]: { ...prev[mainFolder.id], [subKey]: e.target.checked }
-                                      }))}
-                                      className="hidden"
-                                    />
-                                    <div className={`w-3.5 h-3.5 flex items-center justify-center rounded-sm ${isChecked ? 'bg-white text-blue-600' : 'border border-blue-300 bg-transparent'}`}>
-                                       {isChecked && <Check size={10} strokeWidth={3} />}
-                                    </div>
-                                    {sub}
-                                  </label>
-                                );
-                             })}
-                           </div>
-                         </div>
-                       ))}
-                     </div>
-                   )}
-                 </div>
-
-                 <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-4">Pembagian Tim & Penugasan</label>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {[
-                        { title: "Tahap 1: Produksi", roles: ['reporter', 'photo', 'video', 'designer'], bg: "bg-blue-50/50", border: "border-blue-100", titleText: "text-blue-800", titleBorder: "border-blue-200" },
-                        { title: "Tahap 2: Editing", roles: ['editor_media', 'editor_web', 'streaming', 'podcast'], bg: "bg-purple-50/50", border: "border-purple-100", titleText: "text-purple-800", titleBorder: "border-purple-200" },
-                        { title: "Tahap 3: Review", roles: ['reviewer'], bg: "bg-amber-50/50", border: "border-amber-100", titleText: "text-amber-800", titleBorder: "border-amber-200" },
-                        { title: "Tahap 4: Publikasi", roles: ['publisher', 'publisher_web'], bg: "bg-emerald-50/50", border: "border-emerald-100", titleText: "text-emerald-800", titleBorder: "border-emerald-200" }
-                      ].map((stage, idx) => (
-                        <div key={idx} className={`border ${stage.border} ${stage.bg} rounded-xl p-4`}>
-                          <h4 className={`text-sm font-bold ${stage.titleText} mb-3 border-b ${stage.titleBorder} pb-2`}>{stage.title}</h4>
-                          <div className="space-y-3">
-                            {stage.roles.map(roleKey => (
-                               <div key={roleKey} className={`flex flex-col gap-2 p-3 border rounded-lg transition-all bg-white ${roles[roleKey] ? 'border-indigo-500 ring-1 ring-indigo-100 shadow-sm' : 'border-gray-200'}`}>
-                                  <label className="flex items-start gap-3 cursor-pointer">
-                                    <input type="checkbox" name={`role_${roleKey}`} checked={roles[roleKey] || false} onChange={handleRoleChange} className="mt-1 text-indigo-600 focus:ring-indigo-500 w-4 h-4 rounded border-gray-300" />
-                                    <div className="flex-1">
-                                       <span className="block text-sm font-bold text-gray-800">{roleConfig[roleKey].label}</span>
-                                       {renderActionPreview(roleConfig[roleKey])}
-                                    </div>
-                                  </label>
-                                  {roles[roleKey] && (
-                                     <div className="ml-7 mt-2">
-                                       <select className="w-full text-sm border border-indigo-200 rounded-md p-2 bg-indigo-50 text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
-                                         <option value="">-- Tugaskan ke Personel --</option>
-                                         <option value="p1">Joko (Staf Senior)</option>
-                                         <option value="p2">Siti (Magang)</option>
-                                       </select>
-                                     </div>
-                                  )}
-                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                   </div>
-                 </div>
-
-                 <div className="pt-4 border-t border-gray-100 flex justify-end">
-                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-all flex items-center gap-2">
-                       <Send size={18} /> Terbitkan Penugasan
-                    </button>
-                 </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'tracking' && renderSpreadsheet()}
-
-          {activeTab === 'reports' && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2"><Archive className="text-indigo-600"/> Laporan Selesai</h2>
-               {completedProjects.length === 0 ? (
-                  <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                     <CheckCircle size={48} className="mx-auto text-gray-300 mb-3" />
-                     <p className="text-gray-500 font-medium">Belum ada proyek yang diselesaikan.</p>
-                  </div>
-               ) : (
-                  <div className="space-y-4">
-                     {completedProjects.map((p, i) => (
-                        <div key={i} className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm">
-                           <div className="flex justify-between items-start mb-3">
-                              <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">Selesai: {p.completedAt}</span>
-                              <span className="text-sm font-bold text-gray-500">{p.id}</span>
-                           </div>
-                           <h3 className="text-lg font-bold text-gray-800 mb-4">{p.title}</h3>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                 <p className="font-bold text-gray-700 mb-2 flex items-center gap-1"><Folder size={14}/> Asset Drive</p>
-                                 <a href={p.tahap1} className="text-indigo-600 hover:underline block truncate mb-1">↳ Tahap 1: {p.tahap1}</a>
-                                 <a href={p.tahap2} className="text-indigo-600 hover:underline block truncate">↳ Tahap 2: {p.tahap2}</a>
-                              </div>
-                              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                 <p className="font-bold text-gray-700 mb-2 flex items-center gap-1"><Globe size={14}/> Publikasi</p>
-                                 {Object.entries(p.tahap4).map(([plat, url]) => url && (
-                                    <a key={plat} href={url} className="text-indigo-600 hover:underline block truncate mb-1 capitalize">↳ {plat}: {url}</a>
-                                 ))}
-                              </div>
-                           </div>
-                        </div>
-                     ))}
-                  </div>
-               )}
-            </div>
-          )}
-        </div>
-      );
-
-      const renderRoleDashboard = () => {
-        const config = roleConfig[activeRole];
-        if (!config) return null;
-
-        const mockEditorFiles = [
-          { id: 'f1', name: 'Video_Highlight_Senat_Final.mp4', size: '145 MB' },
-          { id: 'f2', name: 'Feed_IG_Carousel_Senat.zip', size: '12.5 MB' }
+        const sidebarMenus = [
+            { id: 'reporter', label: 'Input Konten Baru', icon: 'PenTool', group: 'Tahap 1: Produksi Lapangan' },
+            { id: 'editor_media', label: 'Proses Editing', icon: 'Scissors', group: 'Tahap 2: Editing & Media' },
+            { id: 'publisher', label: 'Jadwal Publikasi', icon: 'Send', group: 'Tahap 4: Publikasi' }
         ];
 
-        let isSubmitDisabled = isSubmitting;
-        if (config.type.includes('upload') && !isUploadConfirmed) isSubmitDisabled = true;
-        if (config.type === 'download_review' && !forwardWithoutUpload && !isUploadConfirmed) isSubmitDisabled = true;
+        function App() {
+            // ==========================================
+            // STATE MANAGEMENT
+            // ==========================================
+            const [currentUser, setCurrentUser] = useState(null);
+            
+            // Database User (Simulasi Database Produksi)
+            const [usersDb, setUsersDb] = useState([
+                { id: 1, name: 'Admin Sistem', email: 'admin@pushakin.com', role: 'superadmin', password: 'password123' },
+                { id: 2, name: 'Bapak Manager', email: 'manager@pushakin.com', role: 'manager', password: 'password123' },
+                { id: 3, name: 'Joko Reporter', email: 'reporter@pushakin.com', role: 'reporter', password: 'password123' },
+                { id: 4, name: 'Siti Editor Media', email: 'editor@pushakin.com', role: 'editor_media', password: 'password123' },
+                { id: 5, name: 'Budi Publisher', email: 'publisher@pushakin.com', role: 'publisher', password: 'password123' }
+            ]);
 
-        if (config.type === 'link') {
-           const hasAtLeastOneLink = Object.values(operatorLinks).some(link => link.trim().length > 5);
-           if (!hasAtLeastOneLink) isSubmitDisabled = true;
-        }
+            const [loginEmail, setLoginEmail] = useState('');
+            const [loginPassword, setLoginPassword] = useState('');
+            const [loginError, setLoginError] = useState('');
 
-        if (config.type === 'download_link') {
-           const hasAtLeastOneLink = Object.values(socialLinks).some(link => link.trim().length > 5);
-           if (!hasAtLeastOneLink) isSubmitDisabled = true;
-        }
+            const [activeRole, setActiveRole] = useState('all_dashboard');
+            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+            const [toastMessage, setToastMessage] = useState('');
 
-        return (
-          <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">Dashboard {config.label}</h2>
-                <p className="text-gray-500 text-sm mt-1">Selesaikan tugas pada antrean Anda dan unggah hasilnya ke sistem.</p>
-              </div>
-              <div className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-bold text-sm border border-indigo-100 flex items-center gap-2">
-                <Activity size={18} /> 1 Tugas Menunggu
-              </div>
-            </div>
+            // ==========================================
+            // HANDLERS
+            // ==========================================
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const user = usersDb.find(u => u.email === loginEmail && u.password === loginPassword);
+                if (user) {
+                    setCurrentUser(user);
+                    setLoginError('');
+                    if (user.role === 'superadmin') setActiveRole('user_management');
+                    else if (user.role === 'manager') setActiveRole('manager');
+                    else setActiveRole(user.role);
+                } else {
+                    setLoginError('Kredensial tidak valid. Periksa email dan password Anda.');
+                }
+            };
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-               <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded text-xs font-bold border border-slate-200">PR-2401</span>
-                    <h3 className="text-xl font-bold text-gray-800 mt-2">Liputan Rapat Senat Terbuka Universitas</h3>
-                  </div>
-                  <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold border border-amber-200 flex items-center gap-1">
-                    <Clock size={14} /> Action Required
-                  </span>
-               </div>
-               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
-                  <p className="text-sm text-gray-700 mb-2"><strong>Instruksi Manager:</strong> Tolong proses hasil liputan kegiatan ini. Pastikan format sesuai standar operasional.</p>
-                  <p className="text-sm text-gray-700"><strong>Deadline:</strong> Hari ini, 18:00 WIB</p>
-               </div>
+            const handleLogout = () => {
+                setCurrentUser(null);
+                setLoginEmail('');
+                setLoginPassword('');
+                setActiveRole('all_dashboard');
+            };
 
-               <div className="border-t border-gray-100 pt-6 mt-2">
-                  <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><Settings size={16} /> Area Kerja {config.label}</h4>
-                  
-                  {(config.type.includes('download') || config.type === 'download_review') && (
-                     <div className="mb-6 bg-purple-50 p-4 rounded-xl border border-purple-100">
-                        <h5 className="text-sm font-bold text-purple-800 mb-3 flex items-center gap-2"><DownloadCloud size={16}/> Draft / Mentahan untuk diproses:</h5>
-                        <div className="space-y-2">
-                           {mockEditorFiles.map(file => (
-                              <div key={file.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
-                                 <div className="flex items-center gap-2"><Paperclip size={16} className="text-gray-400" /><div><p className="text-sm font-semibold text-gray-700">{file.name}</p><span className="text-[10px] text-gray-500">{file.size}</span></div></div>
-                                 <button className="text-indigo-600 font-bold text-xs bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded transition-colors">Unduh</button>
-                              </div>
-                           ))}
+            const handleUpdateUserRole = (userId, newRole) => {
+                setUsersDb(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+                showToast('Hak akses pengguna berhasil diperbarui.');
+            };
+
+            const showToast = (message) => {
+                setToastMessage(message);
+                setTimeout(() => setToastMessage(''), 3000);
+            };
+
+            // ==========================================
+            // COMPONENTS / VIEWS
+            // ==========================================
+            const renderLoginScreen = () => (
+                <div className="flex items-center justify-center h-screen w-full bg-slate-100">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 w-full max-w-md">
+                        <div className="text-center mb-8">
+                            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                <Icon name="Activity" className="text-white" size={32} />
+                            </div>
+                            <h1 className="text-2xl font-black text-gray-900">Pushakin</h1>
+                            <p className="text-sm text-gray-500 mt-1">Sistem Manajemen Alur Kerja Terpadu</p>
                         </div>
-                     </div>
-                  )}
 
-                  {(config.type === 'link' || config.type === 'download_link') && (
-                     <div className="mb-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden ring-1 ring-black/5">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
-                        <div className="mb-5 border-b border-gray-100 pb-4">
-                           <h5 className="text-base font-bold text-gray-800 flex items-center gap-2">
-                             <LinkIcon size={18} className="text-indigo-600" /> Tautan Bukti Hasil {config.type === 'download_link' ? 'Publikasi' : 'Pekerjaan'}
-                           </h5>
-                           <p className="text-xs text-gray-500 mt-1">Masukkan link URL sebagai bukti tayang. <span className="text-rose-600 font-bold">*Wajib isi minimal satu</span>.</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           {activeRole !== 'publisher_web' && (
-                             <>
-                               <div className="flex items-center bg-gray-50 border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500 transition-all">
-                                  <div className="pl-3 pr-2 py-2.5 text-red-500"><Youtube size={18} /></div>
-                                  <input type="url" placeholder="Link YouTube..." 
-                                    value={config.type === 'link' ? operatorLinks.youtube : socialLinks.youtube} 
-                                    onChange={(e) => config.type === 'link' ? setOperatorLinks({...operatorLinks, youtube: e.target.value}) : setSocialLinks({...socialLinks, youtube: e.target.value})} 
-                                    className="w-full py-2.5 pr-3 bg-transparent outline-none text-sm text-gray-800" />
-                               </div>
-                               <div className="flex items-center bg-gray-50 border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-pink-600 focus-within:border-pink-500 transition-all">
-                                  <div className="pl-3 pr-2 py-2.5 text-pink-600"><Instagram size={18} /></div>
-                                  <input type="url" placeholder="Link Instagram..." 
-                                    value={config.type === 'link' ? operatorLinks.instagram : socialLinks.instagram} 
-                                    onChange={(e) => config.type === 'link' ? setOperatorLinks({...operatorLinks, instagram: e.target.value}) : setSocialLinks({...socialLinks, instagram: e.target.value})} 
-                                    className="w-full py-2.5 pr-3 bg-transparent outline-none text-sm text-gray-800" />
-                               </div>
-                               <div className="flex items-center bg-gray-50 border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-slate-800 focus-within:border-slate-800 transition-all">
-                                  <div className="pl-3 pr-2 py-2.5 text-slate-800"><Smartphone size={18} /></div>
-                                  <input type="url" placeholder="Link TikTok..." 
-                                    value={config.type === 'link' ? operatorLinks.tiktok : socialLinks.tiktok} 
-                                    onChange={(e) => config.type === 'link' ? setOperatorLinks({...operatorLinks, tiktok: e.target.value}) : setSocialLinks({...socialLinks, tiktok: e.target.value})} 
-                                    className="w-full py-2.5 pr-3 bg-transparent outline-none text-sm text-gray-800" />
-                               </div>
-                               <div className="flex items-center bg-gray-50 border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
-                                  <div className="pl-3 pr-2 py-2.5 text-blue-600"><Facebook size={18} /></div>
-                                  <input type="url" placeholder="Link Facebook..." 
-                                    value={config.type === 'link' ? operatorLinks.facebook : socialLinks.facebook} 
-                                    onChange={(e) => config.type === 'link' ? setOperatorLinks({...operatorLinks, facebook: e.target.value}) : setSocialLinks({...socialLinks, facebook: e.target.value})} 
-                                    className="w-full py-2.5 pr-3 bg-transparent outline-none text-sm text-gray-800" />
-                               </div>
-                               <div className="flex items-center bg-gray-50 border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-slate-900 focus-within:border-slate-900 transition-all">
-                                  <div className="pl-3 pr-2 py-2.5 text-slate-900"><Twitter size={18} /></div>
-                                  <input type="url" placeholder="Link X (Twitter)..." 
-                                    value={config.type === 'link' ? operatorLinks.twitter : socialLinks.twitter} 
-                                    onChange={(e) => config.type === 'link' ? setOperatorLinks({...operatorLinks, twitter: e.target.value}) : setSocialLinks({...socialLinks, twitter: e.target.value})} 
-                                    className="w-full py-2.5 pr-3 bg-transparent outline-none text-sm text-gray-800" />
-                               </div>
-                             </>
-                           )}
-
-                           {config.type === 'link' && (
-                             <div className="flex items-center bg-gray-50 border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-                                <div className="pl-3 pr-2 py-2.5 text-blue-500"><Video size={18} /></div>
-                                <input type="url" placeholder="Link Zoom..." value={operatorLinks.zoom} onChange={(e) => setOperatorLinks({...operatorLinks, zoom: e.target.value})} className="w-full py-2.5 pr-3 bg-transparent outline-none text-sm text-gray-800" />
-                             </div>
-                           )}
-
-                           {config.type === 'download_link' && (
-                             <div className="flex items-center bg-gray-50 border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-600 focus-within:border-emerald-500 transition-all">
-                                <div className="pl-3 pr-2 py-2.5 text-emerald-600"><Globe size={18} /></div>
-                                <input type="url" placeholder="Link Website..." value={socialLinks.web} onChange={(e) => setSocialLinks({...socialLinks, web: e.target.value})} className="w-full py-2.5 pr-3 bg-transparent outline-none text-sm text-gray-800" />
-                             </div>
-                           )}
-                        </div>
-                     </div>
-                  )}
-
-                  {config.type === 'download_review' && (
-                     <div className="mb-6">
-                        <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${forwardWithoutUpload ? 'bg-indigo-50 border-indigo-300 shadow-sm' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                           <input 
-                             type="checkbox" 
-                             checked={forwardWithoutUpload}
-                             onChange={(e) => setForwardWithoutUpload(e.target.checked)}
-                             className="mt-0.5 w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" 
-                           />
-                           <div>
-                             <span className="block text-sm font-bold text-gray-800">Teruskan file draft di atas ke Tim Publikasi</span>
-                             <span className="block text-xs text-gray-500 mt-0.5">Centang jika file sudah sesuai dan tidak perlu mengunggah ulang file revisi final. Hilangkan centang jika Anda ingin mengunggah file yang sudah direvisi secara mandiri.</span>
-                           </div>
-                        </label>
-
-                        {!forwardWithoutUpload && (
-                           <div className="mt-4 bg-blue-50 p-6 rounded-xl border border-blue-200 text-center relative overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                              <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
-                              <div className="w-16 h-16 bg-white text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-blue-100">
-                                 <Cloud size={32} />
-                              </div>
-                              <p className="font-bold text-gray-800 text-lg mb-2">Upload File Revisi Final</p>
-                              <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto">Silakan unggah file yang telah Anda revisi sendiri ke Folder Final sebelum diteruskan ke Tim Publikasi.</p>
-                              
-                              <a href="#" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm mb-6">
-                                 <Folder size={18} /> Buka Folder Google Drive (Final)
-                              </a>
-                              
-                              <div className={`mt-4 pt-4 border-t flex items-center justify-center gap-3 p-3 rounded-lg transition-colors ${isUploadConfirmed ? 'bg-emerald-50 border-emerald-200' : 'border-blue-200 hover:bg-blue-100/50'}`}>
-                                 <input 
-                                   type="checkbox" 
-                                   id="confirmUploadReviewer" 
-                                   checked={isUploadConfirmed}
-                                   onChange={(e) => setIsUploadConfirmed(e.target.checked)}
-                                   className="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer" 
-                                 />
-                                 <label htmlFor="confirmUploadReviewer" className="text-sm text-gray-800 font-bold cursor-pointer select-none">
-                                   Saya telah mengunggah file revisi final ke Drive
-                                 </label>
-                              </div>
-                           </div>
+                        {loginError && (
+                            <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm font-semibold mb-4 border border-rose-200 flex items-center gap-2">
+                                <Icon name="Lock" size={16} /> {loginError}
+                            </div>
                         )}
-                     </div>
-                  )}
 
-                  {config.type === 'download_review' && (
-                     <div className="mb-6 bg-amber-50 p-5 rounded-xl border border-amber-200 shadow-sm animate-in fade-in duration-300">
-                        <h5 className="text-sm font-bold text-amber-800 mb-3 flex items-center gap-2"><CheckCircle size={16}/> Keputusan Reviewer</h5>
-                        <div className="mb-4">
-                           <label className="block text-sm font-bold text-gray-700 mb-2">Catatan / Detail Revisi (Wajib diisi jika dikembalikan ke Editor):</label>
-                           <textarea
-                             rows="3"
-                             value={reviewerNotes}
-                             onChange={(e) => setReviewerNotes(e.target.value)}
-                             placeholder="Tuliskan catatan perbaikan atau feedback untuk tim editor..."
-                             className="w-full border border-amber-300 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 outline-none bg-white text-sm"
-                           ></textarea>
-                        </div>
-                        <div className="flex flex-col sm:flex-row justify-end gap-3 mt-4">
-                           <button
-                             onClick={() => handleTaskSubmit('Dikembalikan ke Editor untuk direvisi sesuai catatan.')}
-                             disabled={isSubmitting}
-                             className="px-6 py-2.5 rounded-xl font-bold text-rose-600 bg-white hover:bg-rose-50 border border-rose-200 transition-colors text-sm flex items-center justify-center gap-2 shadow-sm"
-                           >
-                             <ArrowLeftRight size={16} /> Kembalikan ke Editor
-                           </button>
-                           <button
-                             onClick={() => handleTaskSubmit('Disetujui! Tugas diteruskan ke Tim Publikasi.')}
-                             disabled={isSubmitDisabled}
-                             className={`px-6 py-2.5 rounded-xl font-bold text-white shadow-md transition-all text-sm flex items-center justify-center gap-2 transform hover:-translate-y-0.5 ${isSubmitDisabled ? 'bg-gray-400 cursor-not-allowed opacity-70' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-                           >
-                             <Check size={16} strokeWidth={3} /> ACC & Teruskan
-                           </button>
-                        </div>
-                     </div>
-                  )}
-
-                  {config.type.includes('upload') && (
-                     <div className="mb-6 bg-blue-50 p-6 rounded-xl border border-blue-200 text-center relative overflow-hidden shadow-sm">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
-                        <div className="w-16 h-16 bg-white text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-blue-100">
-                           <Cloud size={32} />
-                        </div>
-                        <p className="font-bold text-gray-800 text-lg mb-2">Upload ke Workspace Google Drive</p>
-                        <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto">Manager telah menyiapkan folder khusus untuk tugas ini. Silakan unggah semua aset (foto/video/teks) ke dalamnya.</p>
-                        
-                        <a href="#" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm mb-6">
-                           <Folder size={18} /> Buka Folder Google Drive
-                        </a>
-                        
-                        <div className={`mt-4 pt-4 border-t flex items-center justify-center gap-3 p-3 rounded-lg transition-colors ${isUploadConfirmed ? 'bg-emerald-50 border-emerald-200' : 'border-blue-200 hover:bg-blue-100/50'}`}>
-                           <input 
-                             type="checkbox" 
-                             id="confirmUpload" 
-                             checked={isUploadConfirmed}
-                             onChange={(e) => setIsUploadConfirmed(e.target.checked)}
-                             className="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer" 
-                           />
-                           <label htmlFor="confirmUpload" className="text-sm text-gray-800 font-bold cursor-pointer select-none">
-                             Saya telah selesai mengunggah semua hasil produksi ke Drive
-                           </label>
-                        </div>
-                     </div>
-                  )}
-
-                  {config.type !== 'download_review' && (
-                     <div className="flex flex-col sm:flex-row justify-end pt-4 border-t border-gray-100 gap-3">
-                        <button className="px-6 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-sm text-center">
-                           Simpan Draft
-                        </button>
-                        
-                        <button 
-                          onClick={['publisher', 'publisher_web'].includes(activeRole) ? handleCompleteProject : handleTaskSubmit}
-                          disabled={isSubmitDisabled}
-                          className={`px-8 py-2.5 rounded-xl font-bold text-white transition-all text-sm flex items-center justify-center gap-2 ${
-                            isSubmitDisabled 
-                              ? 'bg-gray-400 cursor-not-allowed opacity-70' 
-                              : 'bg-indigo-600 hover:bg-indigo-700 shadow-md transform hover:-translate-y-0.5'
-                          }`}
-                        >
-                          {isSubmitting ? (
-                             <>Sedang Memproses...</>
-                          ) : (
-                             <>
-                               {['publisher', 'publisher_web'].includes(activeRole) ? <CheckCircle size={16} /> : <Send size={16} />} 
-                               {['publisher', 'publisher_web'].includes(activeRole) ? 'Selesaikan Project' : 'Kirim ke Tahap Berikutnya'}
-                             </>
-                          )}
-                        </button>
-                     </div>
-                  )}
-               </div>
-            </div>
-          </div>
-        );
-      };
-
-      // ==========================================
-      // 6. MAIN RENDER (LAYOUT)
-      // ==========================================
-      // Jika belum login, tampilkan layar login (Metode Sign-in)
-      if (!currentUser) {
-         return renderLoginScreen();
-      }
-
-      // Middleware Akses Sidebar: Menentukan menu apa saja yang boleh dilihat user ini
-      const canSeeManager = currentUser.role === 'superadmin' || currentUser.role === 'manager';
-      const canSeeUserMgmt = currentUser.role === 'superadmin';
-
-      return (
-        <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
-          {!isSidebarOpen && <div className="fixed inset-0 bg-gray-900/50 z-20 md:hidden" onClick={() => setIsSidebarOpen(true)} />}
-
-          <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 fixed md:relative z-30 w-72 h-full bg-white border-r border-gray-200 flex flex-col`}>
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"><Activity className="text-white" size={20} /></div>
-                 <div>
-                   <h1 className="text-xl font-black text-gray-900 leading-none">Pushakin</h1>
-                   <p className="text-[10px] font-bold text-indigo-600 uppercase mt-0.5">Flows Dashboard</p>
-                 </div>
-               </div>
-            </div>
-
-            {/* Profil User Login */}
-            <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-bold shrink-0">
-                  <User size={20}/>
+                        <form onSubmit={handleLogin} className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Alamat Email</label>
+                                <input 
+                                    type="email" 
+                                    value={loginEmail} 
+                                    onChange={e => setLoginEmail(e.target.value)} 
+                                    required 
+                                    className="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
+                                    placeholder="email@perusahaan.com" 
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Kata Sandi</label>
+                                <input 
+                                    type="password" 
+                                    value={loginPassword} 
+                                    onChange={e => setLoginPassword(e.target.value)} 
+                                    required 
+                                    className="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
+                                    placeholder="••••••••" 
+                                />
+                            </div>
+                            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex justify-center items-center gap-2 mt-2">
+                                Masuk ke Sistem
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <div className="truncate">
-                  <p className="text-sm font-bold text-gray-800 truncate">{currentUser.name}</p>
-                  <p className="text-xs text-gray-500 capitalize">{currentUser.role === 'superadmin' ? 'Super Admin' : currentUser.role === 'manager' ? 'Manager' : roleConfig[currentUser.role]?.label}</p>
+            );
+
+            const renderUserManagement = () => (
+                <div className="max-w-6xl mx-auto">
+                    <div className="mb-6 border-b border-gray-200 pb-4">
+                        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <Icon name="Users" className="text-indigo-600" /> Manajemen Pengguna
+                        </h2>
+                        <p className="text-gray-500 text-sm mt-1">Kelola akun dan tetapkan hak akses (Role-Based Access Control) untuk setiap pengguna.</p>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                            <h3 className="font-bold text-gray-700">Daftar Pengguna Sistem</h3>
+                            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors">
+                                <Icon name="UserPlus" size={16} /> Tambah Pengguna
+                            </button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left text-gray-600">
+                                <thead className="text-xs text-gray-700 uppercase bg-gray-100 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-4">Nama Lengkap</th>
+                                        <th className="px-6 py-4">Email</th>
+                                        <th className="px-6 py-4">Status Akses</th>
+                                        <th className="px-6 py-4">Konfigurasi Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {usersDb.map(user => (
+                                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                            <td className="px-6 py-4 font-bold text-gray-800 flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                                                    {user.name.charAt(0)}
+                                                </div>
+                                                {user.name}
+                                            </td>
+                                            <td className="px-6 py-4">{user.email}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2.5 py-1 rounded text-xs font-bold border ${
+                                                    user.role === 'superadmin' ? 'bg-purple-100 text-purple-700 border-purple-200' : 
+                                                    user.role === 'manager' ? 'bg-blue-100 text-blue-700 border-blue-200' : 
+                                                    'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                                }`}>
+                                                    {user.role === 'superadmin' ? 'Super Admin' : user.role === 'manager' ? 'Manager' : roleConfig[user.role]?.label || user.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <select 
+                                                    value={user.role} 
+                                                    onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
+                                                    className="bg-white border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 outline-none cursor-pointer"
+                                                    disabled={user.email === currentUser.email} // Mencegah superadmin merubah rolenya sendiri secara tidak sengaja
+                                                >
+                                                    <option value="superadmin">Super Admin</option>
+                                                    <option value="manager">Manager</option>
+                                                    {Object.keys(roleConfig).map(rk => (
+                                                        <option key={rk} value={rk}>{roleConfig[rk].label}</option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <button onClick={handleLogout} className="text-gray-400 hover:text-rose-600 transition-colors p-2 rounded-lg hover:bg-rose-50" title="Keluar">
-                <LogOut size={18} />
-              </button>
-            </div>
+            );
 
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-               <div className="mb-6">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-2">Menu Utama</p>
-                  
-                  {canSeeUserMgmt && (
-                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold mb-1 transition-colors ${activeRole === 'user_management' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('user_management')}><Users size={18} /> Manajemen User</button>
-                  )}
-                  
-                  {canSeeManager && (
-                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold mb-1 transition-colors ${activeRole === 'manager' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('manager')}><LayoutDashboard size={18} /> Ruang Manager</button>
-                  )}
-
-                  <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors ${activeRole === 'all_dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('all_dashboard')}><BarChart size={18} /> Public Dashboard</button>
-               </div>
-
-               {/* Menampilkan menu sesuai Role */}
-               {['Tahap 1: Produksi Lapangan', 'Tahap 2: Editing & Media', 'Tahap 3: Review / QA', 'Tahap 4: Publikasi'].map((groupName) => {
-                 const groupMenus = sidebarMenus.filter(m => m.group === groupName && (canSeeManager || currentUser.role === m.id));
-                 if (groupMenus.length === 0) return null; // Sembunyikan grup jika tidak ada akses
-
-                 return (
-                   <div key={groupName} className="mb-6">
-                      <p className="text-xs font-bold text-gray-400 uppercase mb-2 ml-2">{groupName}</p>
-                      {groupMenus.map(menu => (
-                         <button 
-                           key={menu.id}
-                           className={`w-full flex justify-between items-center px-3 py-2.5 rounded-xl mb-1 transition-colors ${activeRole === menu.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                           onClick={() => { setActiveRole(menu.id); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-                         >
-                           <div className="flex items-center gap-3 font-semibold text-sm"><menu.icon size={18} /> {menu.label}</div>
-                         </button>
-                      ))}
-                   </div>
-                 )
-               })}
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-            <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shrink-0 z-10">
-               <div className="flex items-center gap-4">
-                  <button className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu size={24} /></button>
-                  <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
-                     {activeRole === 'user_management' && 'Manajemen User & Sistem (SuperAdmin)'}
-                     {activeRole === 'manager' && 'Ruang Kontrol Manager'}
-                     {activeRole === 'all_dashboard' && 'Dashboard Monitoring Publik'}
-                     {activeRole !== 'manager' && activeRole !== 'all_dashboard' && activeRole !== 'user_management' && `Area Kerja: ${roleConfig[activeRole]?.label}`}
-                  </h2>
-               </div>
-            </header>
-
-            {hasCompletedTask && (
-              <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300">
-                <div className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 font-medium text-sm border border-gray-700">
-                  <CheckCircle size={18} className="text-emerald-400" /> 
-                  {toastMessage}
+            const renderManagerDashboard = () => (
+                <div className="max-w-6xl mx-auto">
+                     <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800">Ruang Kontrol Manager</h2>
+                        <p className="text-gray-500 text-sm mt-1">Pusat persetujuan dan pemantauan alur kerja tim.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-gray-800">Menunggu Review</h3>
+                                <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">3 Tugas</span>
+                            </div>
+                            <div className="space-y-3">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="p-3 border border-gray-100 rounded-xl bg-gray-50 flex justify-between items-center">
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-700">Laporan Liputan {i}</p>
+                                            <p className="text-xs text-gray-500">Oleh: Joko Reporter</p>
+                                        </div>
+                                        <button className="text-indigo-600 hover:text-indigo-800 text-sm font-bold">Review</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 md:col-span-2">
+                             <h3 className="font-bold text-gray-800 mb-4">Aktivitas Tim Terbaru</h3>
+                             <div className="space-y-4">
+                                <div className="flex gap-4 items-start">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex justify-center items-center text-emerald-600 shrink-0"><Icon name="CheckCircle" size={16}/></div>
+                                    <div>
+                                        <p className="text-sm text-gray-800"><b>Siti Editor Media</b> menyelesaikan editing video <i>"Peliputan Acara Tahunan"</i>.</p>
+                                        <p className="text-xs text-gray-500">10 menit yang lalu</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 items-start">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex justify-center items-center text-blue-600 shrink-0"><Icon name="Send" size={16}/></div>
+                                    <div>
+                                        <p className="text-sm text-gray-800"><b>Budi Publisher</b> mempublikasikan konten ke Instagram.</p>
+                                        <p className="text-xs text-gray-500">1 jam yang lalu</p>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            )}
+            );
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative bg-slate-50">
-               {activeRole === 'user_management' && renderUserManagement()}
-               {activeRole === 'manager' && renderManagerDashboard()}
-               {activeRole === 'all_dashboard' && renderPublicDashboard()}
-               {activeRole !== 'manager' && activeRole !== 'all_dashboard' && activeRole !== 'user_management' && renderRoleDashboard()}
-            </div>
-          </div>
-        </div>
-      );
-    }
+            const renderRoleDashboard = () => (
+                <div className="max-w-4xl mx-auto">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
+                            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+                                <Icon name={roleConfig[activeRole]?.icon || 'FileText'} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800">Area Kerja: {roleConfig[activeRole]?.label}</h2>
+                                <p className="text-sm text-gray-500">Selesaikan tugas Anda pada form di bawah ini.</p>
+                            </div>
+                        </div>
+                        
+                        <form onSubmit={(e) => { e.preventDefault(); showToast('Data berhasil disimpan dan diteruskan ke tahap selanjutnya!'); }} className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Judul Dokumen / Konten</label>
+                                <input type="text" className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500" placeholder="Masukkan judul..." required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Catatan / Keterangan</label>
+                                <textarea className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-indigo-500 h-32" placeholder="Tuliskan detail pekerjaan..." required></textarea>
+                            </div>
+                            <div className="flex justify-end pt-4">
+                                <button type="submit" className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-700 flex items-center gap-2">
+                                    <Icon name="CheckCircle" size={18} /> Simpan & Lanjutkan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
 
-    // Render App ke dalam div #root
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+            const renderPublicDashboard = () => (
+                <div className="max-w-6xl mx-auto">
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800">Dashboard Kinerja</h2>
+                        <p className="text-gray-500 text-sm mt-1">Ringkasan publikasi dan kinerja sistem secara keseluruhan.</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        {[{ label: 'Total Konten', val: '142', icon: 'FileText', color: 'bg-blue-50 text-blue-600' },
+                          { label: 'Proses Editing', val: '18', icon: 'Scissors', color: 'bg-amber-50 text-amber-600' },
+                          { label: 'Menunggu Review', val: '5', icon: 'Clock', color: 'bg-rose-50 text-rose-600' },
+                          { label: 'Telah Dipublikasi', val: '119', icon: 'CheckCircle', color: 'bg-emerald-50 text-emerald-600' }
+                        ].map((stat, idx) => (
+                            <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.color}`}>
+                                    <Icon name={stat.icon} size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-gray-500 uppercase">{stat.label}</p>
+                                    <p className="text-2xl font-black text-gray-800">{stat.val}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex items-center justify-center min-h-[300px]">
+                        <div className="text-center">
+                            <Icon name="BarChart" size={48} className="mx-auto text-gray-300 mb-3" />
+                            <h3 className="text-lg font-bold text-gray-700">Area Visualisasi Data</h3>
+                            <p className="text-sm text-gray-500 max-w-sm mx-auto">Sistem analitik grafik dapat diintegrasikan di bagian ini pada tahap pengembangan selanjutnya.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // ==========================================
+            // MAIN LAYOUT
+            // ==========================================
+            if (!currentUser) return renderLoginScreen();
+
+            // RBAC Middleware
+            const canSeeManager = currentUser.role === 'superadmin' || currentUser.role === 'manager';
+            const canSeeUserMgmt = currentUser.role === 'superadmin';
+
+            return (
+                <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
+                    {/* Overlay Mobile */}
+                    {!isSidebarOpen && (
+                        <div className="fixed inset-0 bg-gray-900/50 z-20 md:hidden" onClick={() => setIsSidebarOpen(true)} />
+                    )}
+
+                    {/* Sidebar */}
+                    <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 fixed md:relative z-30 w-72 h-full bg-white border-r border-gray-200 flex flex-col`}>
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                    <Icon name="Activity" className="text-white" size={20} />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-black text-gray-900 leading-none">Pushakin</h1>
+                                    <p className="text-[10px] font-bold text-indigo-600 uppercase mt-0.5">Sistem Manajemen</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <div className="w-10 h-10 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-bold shrink-0">
+                                    <Icon name="User" size={20}/>
+                                </div>
+                                <div className="truncate">
+                                    <p className="text-sm font-bold text-gray-800 truncate">{currentUser.name}</p>
+                                    <p className="text-xs text-gray-500 capitalize">
+                                        {currentUser.role === 'superadmin' ? 'Super Admin' : currentUser.role === 'manager' ? 'Manager' : roleConfig[currentUser.role]?.label}
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={handleLogout} className="text-gray-400 hover:text-rose-600 transition-colors p-2 rounded-lg hover:bg-rose-50" title="Keluar">
+                                <Icon name="LogOut" size={18} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            <div className="mb-6">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-2">Sistem</p>
+                                
+                                {canSeeUserMgmt && (
+                                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold mb-1 transition-colors ${activeRole === 'user_management' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('user_management')}>
+                                        <Icon name="Users" size={18} /> Manajemen Pengguna
+                                    </button>
+                                )}
+                                
+                                {canSeeManager && (
+                                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold mb-1 transition-colors ${activeRole === 'manager' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('manager')}>
+                                        <Icon name="LayoutDashboard" size={18} /> Ruang Manager
+                                    </button>
+                                )}
+
+                                <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors ${activeRole === 'all_dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('all_dashboard')}>
+                                    <Icon name="BarChart" size={18} /> Dashboard Kinerja
+                                </button>
+                            </div>
+
+                            {['Tahap 1: Produksi Lapangan', 'Tahap 2: Editing & Media', 'Tahap 4: Publikasi'].map((groupName) => {
+                                const groupMenus = sidebarMenus.filter(m => m.group === groupName && (canSeeManager || currentUser.role === m.id));
+                                if (groupMenus.length === 0) return null;
+
+                                return (
+                                    <div key={groupName} className="mb-6">
+                                        <p className="text-xs font-bold text-gray-400 uppercase mb-2 ml-2">{groupName}</p>
+                                        {groupMenus.map(menu => (
+                                            <button 
+                                                key={menu.id}
+                                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-colors font-semibold text-sm ${activeRole === menu.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                                                onClick={() => { setActiveRole(menu.id); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
+                                            >
+                                                <Icon name={menu.icon} size={18} /> {menu.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Main Content Area */}
+                    <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+                        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shrink-0 z-10">
+                            <div className="flex items-center gap-4">
+                                <button className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                                    <Icon name="Menu" size={24} />
+                                </button>
+                                <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
+                                    {activeRole === 'user_management' && 'Manajemen Pengguna Sistem'}
+                                    {activeRole === 'manager' && 'Ruang Kontrol Manager'}
+                                    {activeRole === 'all_dashboard' && 'Dashboard Kinerja'}
+                                    {activeRole !== 'manager' && activeRole !== 'all_dashboard' && activeRole !== 'user_management' && `Area Kerja: ${roleConfig[activeRole]?.label}`}
+                                </h2>
+                            </div>
+                        </header>
+
+                        {toastMessage && (
+                            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300">
+                                <div className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 font-medium text-sm border border-gray-700">
+                                    <Icon name="CheckCircle" size={18} className="text-emerald-400" /> 
+                                    {toastMessage}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative bg-slate-50">
+                            {activeRole === 'user_management' && renderUserManagement()}
+                            {activeRole === 'manager' && renderManagerDashboard()}
+                            {activeRole === 'all_dashboard' && renderPublicDashboard()}
+                            {activeRole !== 'manager' && activeRole !== 'all_dashboard' && activeRole !== 'user_management' && renderRoleDashboard()}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
