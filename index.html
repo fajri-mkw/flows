@@ -47,68 +47,17 @@
       Clock, ChevronRight, BarChart, Calendar, Share2,
       Archive, Paperclip, AlignLeft, Cloud, Check,
       Youtube, Instagram, Smartphone, Monitor, Facebook, Twitter,
-      LogOut, Lock, User
+      LogOut, Lock, User, Users, UserPlus, Trash2, Shield
     } = LucideIcons;
 
     function App() {
       // ==========================================
-      // 1. STATE MANAGEMENT
-      // ==========================================
-      const [currentUser, setCurrentUser] = useState(null);
-      const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-      const [loginError, setLoginError] = useState('');
-
-      const [activeRole, setActiveRole] = useState('all_dashboard');
-      const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-      const [activeTab, setActiveTab] = useState('form');
-
-      const [dateFilter, setDateFilter] = useState('Bulan Ini');
-      const [isCopied, setIsCopied] = useState(false);
-      
-      const [publishLinkValue, setPublishLinkValue] = useState('');
-      const [socialLinks, setSocialLinks] = useState({
-        youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', web: ''
-      });
-      
-      const [operatorLinks, setOperatorLinks] = useState({
-        youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', zoom: ''
-      });
-
-      const [title, setTitle] = useState('');
-      const [unitPemohon, setUnitPemPemohon] = useState('');
-      const [description, setDescription] = useState('');
-      const [autoCreateDrive, setAutoCreateDrive] = useState(true);
-      const [driveFolders, setDriveFolders] = useState({ 
-        raw: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true },
-        revised: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true },
-        final: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true }
-      });
-      const [tempat, setTempat] = useState('');
-      const [waktu, setWaktu] = useState('');
-      const [namaPIC, setNamaPIC] = useState('');
-      const [waPIC, setWaPIC] = useState('');
-      
-      const [completedProjects, setCompletedProjects] = useState([]);
-      const [isSubmitting, setIsSubmitting] = useState(false);
-      const [hasCompletedTask, setHasCompletedTask] = useState(false);
-      const [toastMessage, setToastMessage] = useState('');
-      
-      const [isUploadConfirmed, setIsUploadConfirmed] = useState(false);
-      const [forwardWithoutUpload, setForwardWithoutUpload] = useState(true); 
-      const [reviewerNotes, setReviewerNotes] = useState(''); 
-
-      const [taskTypes, setTaskTypes] = useState({ peliputan: false, pemberitaan: false, liveStreaming: false, podcast: false, desain: false, text: false, lainnya: false });
-      const [needs, setNeeds] = useState({ teks: false, foto: false, video: false, audio: false, streaming: false, desain: false, podcast: false, lainnya: false });
-      
-      const [taskTypeLainnyaValue, setTaskTypeLainnyaValue] = useState('');
-      const [needsLainnyaValue, setNeedsLainnyaValue] = useState('');
-
-      const [roles, setRoles] = useState({ reporter: false, photo: false, video: false, designer: false, editor_media: false, editor_web: false, streaming: false, podcast: false, reviewer: false, publisher: false, publisher_web: false });
-
-      // ==========================================
-      // 2. CONFIGURATION & MOCK DATA
+      // 1. CONFIGURATION & MOCK DATA (Dipindah ke atas agar bisa dipakai di State)
       // ==========================================
       const roleConfig = {
+        admin: { label: 'Super Admin', type: 'admin' },
+        manager: { label: 'Manager Produksi', type: 'manager' },
+        all_dashboard: { label: 'Guest / Pemantau Publik', type: 'public' },
         reporter: { label: 'Reporter', type: 'upload' },
         photo: { label: 'Photographer & Audio', type: 'upload' },
         video: { label: 'Videographer & Audio', type: 'upload' },
@@ -136,8 +85,8 @@
         { id: 'publisher_web', label: 'Publisher Web', icon: Monitor, group: 'Tahap 4: Publikasi' }, 
       ];
 
-      // MOCK USERS DATABASE (Berdasarkan menu navigasi)
-      const mockUsers = [
+      const initialMockUsers = [
+        { username: 'admin', password: '123', role: 'admin', name: 'Super Administrator' },
         { username: 'manager', password: '123', role: 'manager', name: 'Manager Produksi' },
         { username: 'public', password: '123', role: 'all_dashboard', name: 'Guest / Pemantau Publik' },
         ...sidebarMenus.map(m => ({
@@ -147,6 +96,61 @@
           name: m.label
         }))
       ];
+
+      // ==========================================
+      // 2. STATE MANAGEMENT
+      // ==========================================
+      // System Users State (Bisa ditambah/dihapus oleh Admin)
+      const [users, setUsers] = useState(initialMockUsers);
+
+      const [currentUser, setCurrentUser] = useState(null);
+      const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+      const [loginError, setLoginError] = useState('');
+
+      const [activeRole, setActiveRole] = useState('all_dashboard');
+      const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+      const [activeTab, setActiveTab] = useState('form'); // Untuk Manager
+      const [adminTab, setAdminTab] = useState('users'); // Untuk Admin
+
+      const [dateFilter, setDateFilter] = useState('Bulan Ini');
+      const [isCopied, setIsCopied] = useState(false);
+      
+      const [publishLinkValue, setPublishLinkValue] = useState('');
+      const [socialLinks, setSocialLinks] = useState({ youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', web: '' });
+      const [operatorLinks, setOperatorLinks] = useState({ youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', zoom: '' });
+
+      // State Form Manager
+      const [title, setTitle] = useState('');
+      const [unitPemohon, setUnitPemPemohon] = useState('');
+      const [description, setDescription] = useState('');
+      const [autoCreateDrive, setAutoCreateDrive] = useState(true);
+      const [driveFolders, setDriveFolders] = useState({ 
+        raw: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true },
+        revised: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true },
+        final: { foto: true, video: true, audio: true, design: true, text: true, lainnya: true }
+      });
+      const [tempat, setTempat] = useState('');
+      const [waktu, setWaktu] = useState('');
+      const [namaPIC, setNamaPIC] = useState('');
+      const [waPIC, setWaPIC] = useState('');
+      const [taskTypes, setTaskTypes] = useState({ peliputan: false, pemberitaan: false, liveStreaming: false, podcast: false, desain: false, text: false, lainnya: false });
+      const [needs, setNeeds] = useState({ teks: false, foto: false, video: false, audio: false, streaming: false, desain: false, podcast: false, lainnya: false });
+      const [taskTypeLainnyaValue, setTaskTypeLainnyaValue] = useState('');
+      const [needsLainnyaValue, setNeedsLainnyaValue] = useState('');
+      const [roles, setRoles] = useState({ reporter: false, photo: false, video: false, designer: false, editor_media: false, editor_web: false, streaming: false, podcast: false, reviewer: false, publisher: false, publisher_web: false });
+
+      // State Form Admin (Tambah User)
+      const [newUserForm, setNewUserForm] = useState({ username: '', password: '', role: 'reporter', name: '' });
+      const [adminErrorMsg, setAdminErrorMsg] = useState('');
+
+      const [completedProjects, setCompletedProjects] = useState([]);
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const [hasCompletedTask, setHasCompletedTask] = useState(false);
+      const [toastMessage, setToastMessage] = useState('');
+      
+      const [isUploadConfirmed, setIsUploadConfirmed] = useState(false);
+      const [forwardWithoutUpload, setForwardWithoutUpload] = useState(true); 
+      const [reviewerNotes, setReviewerNotes] = useState(''); 
 
       const mockTrackingData = [
         {
@@ -173,13 +177,20 @@
       // ==========================================
       // 3. HANDLERS
       // ==========================================
+      const triggerToast = (msg) => {
+        setToastMessage(msg);
+        setHasCompletedTask(true);
+        setTimeout(() => setHasCompletedTask(false), 3500);
+      };
+
       const handleLogin = (e) => {
         e.preventDefault();
-        const user = mockUsers.find(u => u.username === loginForm.username.toLowerCase().trim() && u.password === loginForm.password);
+        const user = users.find(u => u.username === loginForm.username.toLowerCase().trim() && u.password === loginForm.password);
         
         if (user) {
           setCurrentUser(user);
-          setActiveRole(user.role);
+          // Jika Admin, otomatis arahkan ke dashboard admin
+          setActiveRole(user.role === 'admin' ? 'admin' : user.role);
           setLoginError('');
         } else {
           setLoginError('Username atau Password tidak ditemukan!');
@@ -230,43 +241,72 @@
         }
       };
 
+      // --- Handlers Admin (User Management) ---
+      const handleAddUser = (e) => {
+        e.preventDefault();
+        setAdminErrorMsg('');
+        
+        if (users.find(u => u.username === newUserForm.username.toLowerCase().trim())) {
+           setAdminErrorMsg('Username sudah digunakan! Silakan pilih yang lain.');
+           return;
+        }
+
+        const newUser = {
+           ...newUserForm,
+           username: newUserForm.username.toLowerCase().trim()
+        };
+
+        setUsers([...users, newUser]);
+        setNewUserForm({ username: '', password: '', role: 'reporter', name: '' });
+        triggerToast('Akun pengguna baru berhasil ditambahkan!');
+      };
+
+      const handleDeleteUser = (username) => {
+        if (username === 'admin') {
+           setAdminErrorMsg('Akses Ditolak: Akun Super Admin bawaan tidak dapat dihapus!');
+           setTimeout(() => setAdminErrorMsg(''), 3000);
+           return;
+        }
+        if (username === currentUser.username) {
+           setAdminErrorMsg('Akses Ditolak: Anda tidak dapat menghapus akun Anda sendiri saat sedang login!');
+           setTimeout(() => setAdminErrorMsg(''), 3000);
+           return;
+        }
+
+        setUsers(users.filter(u => u.username !== username));
+        triggerToast(`Akun '${username}' berhasil dihapus.`);
+      };
+
+      // --- Handlers Produksi ---
       const handleAssignTask = (e) => {
         e.preventDefault();
         setIsSubmitting(true);
         setTimeout(() => {
           setIsSubmitting(false);
-          setToastMessage('Penugasan berhasil diterbitkan dan dinotifikasi ke tim!');
-          setHasCompletedTask(true);
+          triggerToast('Penugasan berhasil diterbitkan dan dinotifikasi ke tim!');
           setTitle(''); setTempat(''); setDescription(''); // Reset some fields as demo
-          setTimeout(() => setHasCompletedTask(false), 3500);
         }, 1500);
       };
 
-      const handleSaveDraft = () => {
-        setToastMessage('Draft pekerjaan berhasil disimpan!');
-        setHasCompletedTask(true);
-        setTimeout(() => setHasCompletedTask(false), 3000);
-      };
+      const handleSaveDraft = () => triggerToast('Draft pekerjaan berhasil disimpan!');
 
       const handleTaskSubmit = (actionMsg) => {
         setIsSubmitting(true);
         setTimeout(() => {
           setIsSubmitting(false);
-          setHasCompletedTask(true);
           
           if (typeof actionMsg === 'string' && actionMsg.length > 0) {
-             setToastMessage(actionMsg);
+             triggerToast(actionMsg);
           } else {
              const config = roleConfig[activeRole];
-             if (config.type.includes('upload')) {
-                setToastMessage('Selesai! File berhasil dikonfirmasi dan diteruskan ke petugas Tahap 2.');
+             if (config && config.type.includes('upload')) {
+                triggerToast('Selesai! File berhasil dikonfirmasi dan diteruskan ke petugas Tahap 2.');
              } else {
-                setToastMessage('Tugas selesai! File dan laporan diteruskan ke tahap berikutnya.');
+                triggerToast('Tugas selesai! File dan laporan diteruskan ke tahap berikutnya.');
              }
           }
 
           setTimeout(() => {
-             setHasCompletedTask(false);
              setActiveRole('all_dashboard'); // Arahkan kembali ke public dashboard
              setIsUploadConfirmed(false);
              setPublishLinkValue('');
@@ -274,7 +314,7 @@
              setForwardWithoutUpload(true); 
              setOperatorLinks({ youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', zoom: '' }); 
              setSocialLinks({ youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', web: '' }); 
-          }, 3500);
+          }, 2000);
         }, 1500);
       };
 
@@ -292,14 +332,11 @@
           
           setCompletedProjects(prev => [newReport, ...prev]);
           setIsSubmitting(false);
-          setToastMessage('Proyek Selesai! Laporan telah masuk ke meja Manager.');
-          setHasCompletedTask(true);
-          
-          setTimeout(() => setHasCompletedTask(false), 4000);
+          triggerToast('Proyek Selesai! Laporan telah masuk ke meja Manager.');
           
           setSocialLinks({ youtube: '', instagram: '', tiktok: '', facebook: '', twitter: '', web: '' });
           setPublishLinkValue('');
-          setActiveRole('all_dashboard'); // Arahkan kembali ke public dashboard
+          setTimeout(() => setActiveRole('all_dashboard'), 2000);
         }, 1500);
       };
 
@@ -307,6 +344,7 @@
       // 4. RENDER HELPERS
       // ==========================================
       const renderActionPreview = (config) => {
+        if (!config) return null;
         switch(config.type) {
           case 'upload': return <span className="flex w-fit items-center gap-1.5 text-[11px] font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded border border-blue-200 mt-1"><Cloud size={14}/> Folder Drive Upload</span>;
           case 'download_upload': return (
@@ -337,7 +375,6 @@
       // ==========================================
       const renderLoginScreen = () => (
         <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 relative overflow-hidden w-full">
-          {/* Background Decorative */}
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
 
@@ -368,7 +405,7 @@
                     value={loginForm.username}
                     onChange={e => setLoginForm({...loginForm, username: e.target.value})}
                     className="w-full pl-10 border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                    placeholder="Contoh: manager, reporter, photo"
+                    placeholder="Contoh: admin, manager, reporter"
                     required
                   />
                 </div>
@@ -385,7 +422,7 @@
                     value={loginForm.password}
                     onChange={e => setLoginForm({...loginForm, password: e.target.value})}
                     className="w-full pl-10 border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                    placeholder="Masukkan password"
+                    placeholder="Masukkan password (Default: 123)"
                     required
                   />
                 </div>
@@ -399,17 +436,113 @@
             <div className="mt-8 pt-6 border-t border-gray-100">
               <p className="text-[11px] font-bold text-gray-400 mb-3 text-center uppercase tracking-wider">Demo Credentials (Password: 123)</p>
               <div className="flex flex-wrap gap-2 justify-center">
-                <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded font-semibold cursor-help" title="Akses Admin Penuh">manager</span>
+                <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-2 py-1 rounded font-semibold cursor-help" title="Akses Super Admin (Full Control)">admin</span>
+                <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded font-semibold cursor-help" title="Akses Manager Produksi">manager</span>
                 <span className="text-[10px] bg-slate-100 text-slate-700 border border-slate-200 px-2 py-1 rounded font-semibold cursor-help" title="Akses Pantauan Publik">public</span>
-                {sidebarMenus.map(m => (
-                   <span key={m.id} className="text-[10px] bg-white text-gray-600 border border-gray-200 px-2 py-1 rounded font-semibold cursor-help" title={`Akses ${m.label}`}>{m.id}</span>
+                {sidebarMenus.slice(0, 4).map(m => ( // Tampilkan beberapa contoh saja agar tidak terlalu penuh
+                   <span key={m.id} className="text-[10px] bg-white text-gray-600 border border-gray-200 px-2 py-1 rounded font-semibold">{m.id}</span>
                 ))}
+                <span className="text-[10px] text-gray-400 px-2 py-1">dll...</span>
               </div>
             </div>
           </div>
         </div>
       );
 
+      // --- Admin View ---
+      const renderAdminDashboard = () => (
+        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+          <div className="bg-gradient-to-r from-rose-800 to-indigo-900 p-8 rounded-2xl shadow-lg text-white relative overflow-hidden">
+            <Shield className="absolute right-[-20px] top-[-20px] text-white opacity-10" size={180} />
+            <h2 className="text-3xl font-black mb-2 flex items-center gap-3"><Shield className="text-rose-400"/> Pusat Kontrol Super Admin</h2>
+            <p className="text-indigo-200 max-w-2xl">Anda memiliki akses penuh ke seluruh sistem Pushakin. Gunakan panel ini untuk menambah, mengubah, atau menghapus hak akses pengguna.</p>
+          </div>
+
+          {adminErrorMsg && (
+             <div className="bg-red-50 text-red-600 border border-red-200 p-4 rounded-xl flex items-center gap-2 font-semibold shadow-sm animate-in fade-in slide-in-from-top-2">
+                <Trash2 size={18} /> {adminErrorMsg}
+             </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+             {/* Form Tambah User */}
+             <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-200 h-fit">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-3"><UserPlus className="text-indigo-600"/> Tambah Pengguna</h3>
+                <form onSubmit={handleAddUser} className="space-y-4">
+                   <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Username (Login)</label>
+                      <input type="text" required value={newUserForm.username} onChange={e => setNewUserForm({...newUserForm, username: e.target.value})} className="w-full border border-gray-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Cth: joko_editor" />
+                   </div>
+                   <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Password</label>
+                      <input type="text" required value={newUserForm.password} onChange={e => setNewUserForm({...newUserForm, password: e.target.value})} className="w-full border border-gray-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Minimal 3 karakter" />
+                   </div>
+                   <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Nama Lengkap</label>
+                      <input type="text" required value={newUserForm.name} onChange={e => setNewUserForm({...newUserForm, name: e.target.value})} className="w-full border border-gray-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Cth: Joko Susilo" />
+                   </div>
+                   <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Role / Peran</label>
+                      <select required value={newUserForm.role} onChange={e => setNewUserForm({...newUserForm, role: e.target.value})} className="w-full border border-gray-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                         {Object.keys(roleConfig).map(key => (
+                            <option key={key} value={key}>{roleConfig[key].label} ({key})</option>
+                         ))}
+                      </select>
+                   </div>
+                   <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 text-sm">
+                      <UserPlus size={16} /> Buat Akun
+                   </button>
+                </form>
+             </div>
+
+             {/* Tabel List User */}
+             <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div className="flex justify-between items-center mb-4 border-b pb-3">
+                   <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Users className="text-indigo-600"/> Daftar Akun Aktif</h3>
+                   <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">{users.length} Akun</span>
+                </div>
+                
+                <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                   <table className="w-full text-sm text-left text-gray-600">
+                      <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                         <tr>
+                            <th className="px-4 py-3 border-r border-gray-200">Akun (Login)</th>
+                            <th className="px-4 py-3 border-r border-gray-200">Role Sistem</th>
+                            <th className="px-4 py-3 border-r border-gray-200 text-center">Password</th>
+                            <th className="px-4 py-3 text-center">Aksi</th>
+                         </tr>
+                      </thead>
+                      <tbody>
+                         {users.map((u, idx) => (
+                           <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3 border-r border-gray-100 align-middle">
+                                 <span className="font-bold text-gray-800 block">{u.name}</span>
+                                 <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 mt-1 inline-block">@{u.username}</span>
+                              </td>
+                              <td className="px-4 py-3 border-r border-gray-100 align-middle">
+                                 <span className={`text-xs font-bold px-2 py-1 rounded block w-fit ${u.role === 'admin' ? 'bg-rose-100 text-rose-800' : u.role === 'manager' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'}`}>
+                                    {roleConfig[u.role] ? roleConfig[u.role].label : u.role}
+                                 </span>
+                              </td>
+                              <td className="px-4 py-3 border-r border-gray-100 align-middle text-center font-mono bg-slate-50">
+                                 {u.password}
+                              </td>
+                              <td className="px-4 py-3 align-middle text-center">
+                                 <button onClick={() => handleDeleteUser(u.username)} className="text-rose-500 hover:text-white hover:bg-rose-500 p-2 rounded-lg transition-colors inline-flex justify-center items-center group" title="Hapus Akun">
+                                    <Trash2 size={18} className="group-hover:scale-110 transition-transform"/>
+                                 </button>
+                              </td>
+                           </tr>
+                         ))}
+                      </tbody>
+                   </table>
+                </div>
+             </div>
+          </div>
+        </div>
+      );
+
+      // --- Public Dashboard View ---
       const renderPublicDashboard = () => {
         const stages = ['Produksi', 'Editing', 'Review', 'Publikasi'];
 
@@ -510,6 +643,7 @@
         );
       };
 
+      // --- Spreadhseet View ---
       const renderSpreadsheet = () => (
         <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 w-full overflow-hidden flex flex-col animate-in fade-in duration-300">
            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-100 pb-4 gap-4">
@@ -578,6 +712,7 @@
         </div>
       );
 
+      // --- Manager View ---
       const renderManagerDashboard = () => (
         <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
           <div className="flex gap-4 mb-6 border-b border-gray-200 pb-2 overflow-x-auto hide-scrollbar">
@@ -590,6 +725,7 @@
             <form onSubmit={handleAssignTask} className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2"><PenTool className="text-indigo-600"/> Form Instruksi Manager</h2>
               <div className="space-y-6">
+                 {/* ... Form input manager (sama seperti sebelumnya, dipersingkat di sini agar tidak memakan ruang visual jika tidak diubah logikanya) ... */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div>
                      <label className="block text-sm font-bold text-gray-700 mb-2">Judul Penugasan</label>
@@ -633,13 +769,7 @@
                       </div>
                       {taskTypes.lainnya && (
                         <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <input 
-                            type="text" 
-                            value={taskTypeLainnyaValue} 
-                            onChange={(e) => setTaskTypeLainnyaValue(e.target.value)} 
-                            placeholder="Sebutkan jenis kegiatan lainnya..." 
-                            className="w-full border border-indigo-200 bg-indigo-50 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                          />
+                          <input type="text" value={taskTypeLainnyaValue} onChange={(e) => setTaskTypeLainnyaValue(e.target.value)} placeholder="Sebutkan jenis kegiatan lainnya..." className="w-full border border-indigo-200 bg-indigo-50 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                         </div>
                       )}
                    </div>
@@ -656,13 +786,7 @@
                       </div>
                       {needs.lainnya && (
                         <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <input 
-                            type="text" 
-                            value={needsLainnyaValue} 
-                            onChange={(e) => setNeedsLainnyaValue(e.target.value)} 
-                            placeholder="Sebutkan output lainnya..." 
-                            className="w-full border border-emerald-200 bg-emerald-50 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                          />
+                          <input type="text" value={needsLainnyaValue} onChange={(e) => setNeedsLainnyaValue(e.target.value)} placeholder="Sebutkan output lainnya..." className="w-full border border-emerald-200 bg-emerald-50 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
                         </div>
                       )}
                    </div>
@@ -745,8 +869,9 @@
                                      <div className="ml-7 mt-2">
                                        <select className="w-full text-sm border border-indigo-200 rounded-md p-2 bg-indigo-50 text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-500 font-medium" required>
                                          <option value="">-- Tugaskan ke Personel --</option>
-                                         <option value="p1">Joko (Staf Senior)</option>
-                                         <option value="p2">Siti (Magang)</option>
+                                         {users.filter(u => u.role === roleKey).map(u => (
+                                           <option key={u.username} value={u.username}>{u.name} (@{u.username})</option>
+                                         ))}
                                        </select>
                                      </div>
                                   )}
@@ -808,6 +933,7 @@
         </div>
       );
 
+      // --- Tim Produksi View ---
       const renderRoleDashboard = () => {
         const config = roleConfig[activeRole];
         if (!config) return null;
@@ -844,6 +970,7 @@
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+               {/* Detail Instruksi Pekerjaan (Dummy) */}
                <div className="flex justify-between items-start mb-4">
                   <div>
                     <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded text-xs font-bold border border-slate-200">PR-2401</span>
@@ -861,6 +988,7 @@
                <div className="border-t border-gray-100 pt-6 mt-2">
                   <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><Settings size={16} /> Area Kerja {config.label}</h4>
                   
+                  {/* Kondisi Jika Perlu Download Mentahan / Draft */}
                   {(config.type.includes('download') || config.type === 'download_review') && (
                      <div className="mb-6 bg-purple-50 p-4 rounded-xl border border-purple-100">
                         <h5 className="text-sm font-bold text-purple-800 mb-3 flex items-center gap-2"><DownloadCloud size={16}/> Draft / Mentahan untuk diproses:</h5>
@@ -875,6 +1003,7 @@
                      </div>
                   )}
 
+                  {/* Form Links Publikasi/Operator */}
                   {(config.type === 'link' || config.type === 'download_link') && (
                      <div className="mb-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden ring-1 ring-black/5">
                         <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
@@ -943,6 +1072,7 @@
                      </div>
                   )}
 
+                  {/* Form Untuk Reviewer */}
                   {config.type === 'download_review' && (
                      <div className="mb-6">
                         <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${forwardWithoutUpload ? 'bg-indigo-50 border-indigo-300 shadow-sm' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
@@ -1020,6 +1150,7 @@
                      </div>
                   )}
 
+                  {/* Form Khusus untuk Mengunggah File ke Drive */}
                   {config.type.includes('upload') && (
                      <div className="mb-6 bg-blue-50 p-6 rounded-xl border border-blue-200 text-center relative overflow-hidden shadow-sm">
                         <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
@@ -1048,6 +1179,7 @@
                      </div>
                   )}
 
+                  {/* Tombol Aksi Akhir */}
                   {config.type !== 'download_review' && (
                      <div className="flex flex-col sm:flex-row justify-end pt-4 border-t border-gray-100 gap-3">
                         <button 
@@ -1090,6 +1222,10 @@
       // Jika belum login, tampilkan layar login
       if (!currentUser) return renderLoginScreen();
 
+      // Hak akses penuh jika Admin atau Manager
+      const isSuperAdmin = currentUser.role === 'admin';
+      const isManagerOrAdmin = currentUser.role === 'manager' || currentUser.role === 'admin';
+
       return (
         <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
           {/* Overlay Mobile Sidebar */}
@@ -1109,8 +1245,14 @@
                <div className="mb-6">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-2">Sistem Sentral</p>
                   
-                  {currentUser.role === 'manager' && (
-                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors ${activeRole === 'manager' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('manager')}>
+                  {isSuperAdmin && (
+                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors ${activeRole === 'admin' ? 'bg-rose-50 text-rose-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('admin')}>
+                      <Shield size={18} /> Manajemen Akun
+                    </button>
+                  )}
+
+                  {isManagerOrAdmin && (
+                    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold mt-1 transition-colors ${activeRole === 'manager' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveRole('manager')}>
                       <LayoutDashboard size={18} /> Ruang Manager
                     </button>
                   )}
@@ -1122,7 +1264,7 @@
 
                {/* Render Menu Sidebar sesuai Role yang diizinkan */}
                {['Tahap 1: Produksi Lapangan', 'Tahap 2: Editing & Media', 'Tahap 3: Review / QA', 'Tahap 4: Publikasi'].map((groupName) => {
-                 const groupMenus = sidebarMenus.filter(m => m.group === groupName && (currentUser.role === 'manager' || currentUser.role === m.id));
+                 const groupMenus = sidebarMenus.filter(m => m.group === groupName && (isManagerOrAdmin || currentUser.role === m.id));
                  
                  if (groupMenus.length === 0) return null;
 
@@ -1149,7 +1291,7 @@
                  <div className="w-8 h-8 bg-indigo-200 text-indigo-800 rounded-full flex items-center justify-center font-bold">{currentUser.name.charAt(0)}</div>
                  <div className="text-xs">
                    <p className="font-bold text-gray-800">{currentUser.name}</p>
-                   <p className="text-gray-500">{currentUser.role === 'manager' ? 'Manager' : 'Staff'}</p>
+                   <p className="text-gray-500">{roleConfig[currentUser.role]?.label}</p>
                  </div>
                </div>
                <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg">
@@ -1163,9 +1305,10 @@
                <div className="flex items-center gap-4">
                   <button className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu size={24} /></button>
                   <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
+                     {activeRole === 'admin' && 'Pusat Kontrol Super Admin'}
                      {activeRole === 'manager' && 'Ruang Kontrol Manager'}
                      {activeRole === 'all_dashboard' && 'Dashboard Monitoring Publik'}
-                     {activeRole !== 'manager' && activeRole !== 'all_dashboard' && `Area Kerja: ${roleConfig[activeRole]?.label}`}
+                     {activeRole !== 'admin' && activeRole !== 'manager' && activeRole !== 'all_dashboard' && `Area Kerja: ${roleConfig[activeRole]?.label}`}
                   </h2>
                </div>
 
@@ -1174,10 +1317,10 @@
                   <div className="text-right hidden sm:block">
                     <p className="text-sm font-bold text-gray-800 leading-none">{currentUser.name}</p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase mt-1 tracking-wider">
-                      {currentUser.role === 'manager' ? 'Administrator' : currentUser.role === 'all_dashboard' ? 'Pemantau Publik' : 'Staff Produksi'}
+                      {roleConfig[currentUser.role]?.label || currentUser.role}
                     </p>
                   </div>
-                  <div className="w-9 h-9 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-black border border-indigo-200 shadow-sm">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black shadow-sm ${isSuperAdmin ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}`}>
                     {currentUser.name.charAt(0)}
                   </div>
                   <button onClick={handleLogout} className="text-gray-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors ml-1 hidden sm:flex" title="Keluar dari sistem">
@@ -1197,9 +1340,10 @@
             )}
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative bg-slate-50">
+               {activeRole === 'admin' && renderAdminDashboard()}
                {activeRole === 'manager' && renderManagerDashboard()}
                {activeRole === 'all_dashboard' && renderPublicDashboard()}
-               {activeRole !== 'manager' && activeRole !== 'all_dashboard' && renderRoleDashboard()}
+               {activeRole !== 'admin' && activeRole !== 'manager' && activeRole !== 'all_dashboard' && renderRoleDashboard()}
             </div>
           </div>
         </div>
@@ -1211,4 +1355,3 @@
   </script>
 </body>
 </html>
-
